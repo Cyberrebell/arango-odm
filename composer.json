@@ -17,7 +17,8 @@
     ],
     "license": "GPL-3.0",
     "require": {
-        "php": ">=5.4.36"
+        "php": ">=5.4.36",
+        "ext-curl" : "*"
     },
     "autoload": {
         "psr-0": {
