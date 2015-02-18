@@ -38,11 +38,44 @@ class DocumentHandler
 	
 	}
 	
-	function findById($id) {
-		return $this->adapter->findById($id);
+	function query($query) {
+		$documents = $this->adapter->query($query);
+		return $this->mapDocuments($documents);
 	}
 	
-	function findBy(array $properties) {
-		return $this->adapter->findBy($properties);
+	function findById($id) {
+		$document = $this->adapter->findById($id);
+		if (empty($document)) {
+			return false;
+		} else {
+			return $this->mapDocument($document);
+		}
+	}
+	
+	function findBy($collection, array $properties) {
+		return $this->adapter->findBy($collection, $properties);
+	}
+	
+	function findAll($collection) {
+		$documents = $this->adapter->findAll($collection);
+		return $this->mapDocuments($documents);
+	}
+	
+	function count($collection) {
+		return $this->adapter->count($collection);
+	}
+	
+	protected function mapDocuments(array $documents) {
+		$docs = [];
+		foreach ($documents as $document) {
+			$docs[$document['_id']] = $this->mapDocument($document);
+		}
+		return $docs;
+	}
+	
+	protected function mapDocument(array $document) {
+		$docId = $document['_id'];
+		$collectionName = substr($docId, 0, strpos($docId, '/'));	//get collection-name of result
+		return new Document($collectionName, $document);
 	}
 }

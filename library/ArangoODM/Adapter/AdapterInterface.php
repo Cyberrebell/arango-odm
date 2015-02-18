@@ -9,5 +9,7 @@ interface AdapterInterface
 	function __construct(Config $config);
 	function query($query);
 	function findById($id);
-	function findBy(array $properties);
+	function findBy($collection, array $properties);
+	function findAll($collection);
+	function count($collection);
 }

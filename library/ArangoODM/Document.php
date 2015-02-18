@@ -5,11 +5,12 @@ namespace ArangoODM;
 class Document
 {
 	protected static $documentHandler;
-	protected $properties = [];
+	protected $properties;
 	private $collectionName;
 	
-	function __construct($collectionName) {
+	function __construct($collectionName, array $properties = []) {
 		$this->collectionName = $collectionName;
+		$this->properties = $properties;
 	}
 	
 	function getCollectionName() {
