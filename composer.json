@@ -1,0 +1,27 @@
+{
+    "name": "cyberrebell/arango-odm",
+    "description": "php odm client for arango-db",
+    "authors": [
+        {
+            "name": "Cyberrebell",
+            "email": "chainsaw75@web.de"
+        }
+    ],
+    "type": "library",
+    "keywords": [
+        "arango",
+        "php",
+        "odm",
+        "db",
+        "nosql"
+    ],
+    "license": "GPL-3.0",
+    "require": {
+        "php": ">=5.4.36"
+    },
+    "autoload": {
+        "psr-0": {
+            "ArangoODM\\": "library/"
+        }
+    }
+}
