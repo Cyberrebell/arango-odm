@@ -40,4 +40,12 @@ class Document
 			return null;
 		}
 	}
+	
+	function getId() {
+		return $this->_id;
+	}
+	
+	function getRawProperties() {
+		return $this->properties;
+	}
 }

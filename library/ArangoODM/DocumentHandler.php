@@ -27,15 +27,15 @@ class DocumentHandler
 	}
 	
 	function add(Document $document) {
-		
+		$this->adapter->add($document);
 	}
 	
 	function update(Document $document) {
-	
+		$this->adapter->update($document);
 	}
 	
 	function delete(Document $document) {
-	
+		$this->adapter->delete($document);
 	}
 	
 	function query($query) {
@@ -52,8 +52,8 @@ class DocumentHandler
 		}
 	}
 	
-	function findBy($collection, array $properties) {
-		return $this->adapter->findBy($collection, $properties);
+	function findBy(Document $document) {
+		return $this->adapter->findBy($document);
 	}
 	
 	function findAll($collection) {

@@ -3,11 +3,14 @@
 namespace ArangoODM\Adapter;
 
 use ArangoODM\Config;
+use ArangoODM\Document;
 
 class CurlAdapter implements AdapterInterface
 {
 	const METHOD_GET = 'GET';
 	const METHOD_POST = 'POST';
+	const METHOD_PUT = 'PUT';
+	const METHOD_DELETE = 'DELETE';
 	
 	protected $ip = '127.0.0.1';
 	protected $port = '8529';
@@ -37,6 +40,18 @@ class CurlAdapter implements AdapterInterface
 		}
 	}
 	
+	function add(Document $document) {
+		return $this->request($this->getBaseUrl() . 'document?collection=' . $document->getCollectionName(), self::METHOD_POST, $document->getRawProperties());
+	}
+	
+	function update(Document $document) {
+		return $this->request($this->getBaseUrl() . 'document/' . $document->getId(), self::METHOD_PUT, $document->getRawProperties());
+	}
+	
+	function delete(Document $document) {
+		return $this->request($this->getBaseUrl() . 'document/' . $document->getId(), self::METHOD_DELETE);
+	}
+	
 	function query($query) {
 		$result = $this->request($this->getBaseUrl() . 'cursor', self::METHOD_POST, ['query' => $query]);
 		return $result['result'];
@@ -46,7 +61,7 @@ class CurlAdapter implements AdapterInterface
 		return $this->request($this->getBaseUrl() . 'document/' . $id, self::METHOD_GET);
 	}
 	
-	function findBy($collection, array $properties) {
+	function findBy(Document $document) {
 		
 	}
 	
@@ -55,19 +70,19 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	function count($collection) {
-		$result = $this->request($this->getBaseUrl() . 'document/?collection=' . $collection . '&type=id', self::METHOD_GET);
+		$result = $this->request($this->getBaseUrl() . 'document?collection=' . $collection . '&type=id', self::METHOD_GET);
 		return count($result['documents']);
 	}
 	
 	protected function request($url, $method, array $params = null) {
 		$handle = curl_init($url);
 		$options = [
-			CURLOPT_RETURNTRANSFER => 1
+			CURLOPT_RETURNTRANSFER => 1,
+			CURLOPT_CUSTOMREQUEST => $method
 		];
 		
-		if ($method == self::METHOD_POST) {                                                                 
+		if ($method == self::METHOD_POST || $method == self::METHOD_PUT) {                                                                 
 			$jsonParams = json_encode($params);
-			$options[CURLOPT_CUSTOMREQUEST] = $method;
 			$options[CURLOPT_POSTFIELDS] = $jsonParams;
 			$options[CURLOPT_HTTPHEADER] = [
 				'Content-Type: application/json',
