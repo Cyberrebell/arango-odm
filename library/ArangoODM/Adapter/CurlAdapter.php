@@ -62,7 +62,8 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	function findBy(Document $document) {
-		
+		$result = $this->request($this->getBaseUrl() . 'simple/by-example', self::METHOD_PUT, ['collection' => $document->getCollectionName(), 'example' => $document->getRawProperties()]);
+		return $result;
 	}
 	
 	function findAll($collection) {
@@ -81,8 +82,8 @@ class CurlAdapter implements AdapterInterface
 			CURLOPT_CUSTOMREQUEST => $method
 		];
 		
-		if ($method == self::METHOD_POST || $method == self::METHOD_PUT) {                                                                 
-			$jsonParams = json_encode($params);
+		if ($method == self::METHOD_POST || $method == self::METHOD_PUT) {
+			$jsonParams = json_encode($params, JSON_FORCE_OBJECT);
 			$options[CURLOPT_POSTFIELDS] = $jsonParams;
 			$options[CURLOPT_HTTPHEADER] = [
 				'Content-Type: application/json',
