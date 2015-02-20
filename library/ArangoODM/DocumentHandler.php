@@ -53,7 +53,8 @@ class DocumentHandler
 	}
 	
 	function findBy(Document $document) {
-		return $this->adapter->findBy($document);
+		$documents = $this->adapter->findBy($document);
+		return $this->mapDocuments($documents);
 	}
 	
 	function findAll($collection) {
@@ -63,6 +64,15 @@ class DocumentHandler
 	
 	function count($collection) {
 		return $this->adapter->count($collection);
+	}
+	
+	function getNeighbor(Document $document, $edgeCollection) {
+		$documents = $this->adapter->getNeighbor($document, $edgeCollection);
+		$docs = [];
+		foreach ($documents as $document) {
+			$docs[$document['vertex']['_id']] = $this->mapDocument($document['vertex']);
+		}
+		return $docs;
 	}
 	
 	protected function mapDocuments(array $documents) {

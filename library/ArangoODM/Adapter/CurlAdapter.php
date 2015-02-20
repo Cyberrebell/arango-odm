@@ -63,7 +63,7 @@ class CurlAdapter implements AdapterInterface
 	
 	function findBy(Document $document) {
 		$result = $this->request($this->getBaseUrl() . 'simple/by-example', self::METHOD_PUT, ['collection' => $document->getCollectionName(), 'example' => $document->getRawProperties()]);
-		return $result;
+		return $result['result'];
 	}
 	
 	function findAll($collection) {
@@ -73,6 +73,11 @@ class CurlAdapter implements AdapterInterface
 	function count($collection) {
 		$result = $this->request($this->getBaseUrl() . 'document?collection=' . $collection . '&type=id', self::METHOD_GET);
 		return count($result['documents']);
+	}
+	
+	function getNeighbor(Document $document, $edgeCollection) {
+		$result = $this->query('FOR d in host FILTER d._id=="' . $document->getId() . '" RETURN NEIGHBORS(host, ' . $edgeCollection . ', d, "any")');
+		return reset($result);
 	}
 	
 	protected function request($url, $method, array $params = null) {
