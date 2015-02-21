@@ -79,7 +79,7 @@ class CurlAdapter implements AdapterInterface
 		return count($result['documents']);
 	}
 	
-	function getNeighbor(Document $document, $edgeCollection, $filter = []) {
+	function getNeighbor(Document $document, $edgeCollection, $filter) {
 		$query = 'FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") ';
 		if (!empty($filter)) {
 			$query .= 'FILTER ' . $this->filterToAqlFilter($filter, 'n.vertex', true) . ' ';

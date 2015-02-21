@@ -87,6 +87,34 @@ class DocumentHandler
 		}
 	}
 	
+	function addNeighbor($document, $edgeCollection, $target) {
+		if (is_array($document)) {
+			$source = $document;
+		} else if ($document instanceof Document) {
+			$source = [$document];
+		} else {
+			return false;
+		}
+		
+		if (is_array($target)) {
+			$destination = $target;
+		} else if ($target instanceof Document) {
+			$destination = [$target];
+		} else {
+			return false;
+		}
+		
+		$this->ensureEdge($source, $edgeCollection, $destination);
+	}
+	
+	function removeNeighbor($document, $edgeCollection, $target, $deleteNeighbor = false) {
+	
+	}
+	
+	function setNeighbor($document, $edgeCollection, $target) {
+	
+	}
+	
 	protected function mapDocuments(array $documents) {
 		$docs = [];
 		foreach ($documents as $document) {
@@ -108,5 +136,37 @@ class DocumentHandler
 		} else {
 			return false;
 		}
+	}
+	
+	protected function ensurePresence($document) {
+		$documentsToAdd = [];
+		foreach ($document as $singleDoc) {
+			if (!$singleDoc->getId()) {
+				$documentsToAdd[] = $singleDoc;
+			}
+		}
+		
+		foreach ($documentsToAdd as $doc) {	//todo bulk
+			$this->add($doc);
+		}
+	}
+	
+	protected function ensureEdge($source, $edgeCollection, $target) {
+		$this->ensurePresence($source);
+		$this->ensurePresence($target);
+		
+		$sourceArray = '[';
+		foreach ($source as $src) {
+			$sourceArray .= '"' . $src->getId() . '",';
+		}
+		$sourceArray = substr($sourceArray, 0, -1) . ']';
+		
+		$targetArray = '[';
+		foreach ($target as $tar) {
+			$targetArray .= '"' . $tar->getId() . '",';
+		}
+		$targetArray = substr($targetArray, 0, -1) . ']';
+		
+		$this->query('FOR s IN ' . $sourceArray . ' FOR d IN ' . $targetArray . ' LET matches = (FOR x IN ' . $edgeCollection . ' FILTER x._from == s && x._to == d RETURN s._id) FILTER s._id NOT IN matches INSERT { _from: s, _to: d } IN ' . $edgeCollection);
 	}
 }

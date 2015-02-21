@@ -1,4 +1,4 @@
-# arango-odm
+# Arango-ODM
 This library is an PHP ODM for ArangoDB. If offers a lot of helpful tools to work with your ArangoDB in your PHP-Project.
 
 # Warning: Early Development - The usage of this lib may change frequently!

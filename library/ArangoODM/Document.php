@@ -52,10 +52,10 @@ class Document
 		return $this->properties;
 	}
 	
-	protected function lazyGetNeighbor($targetCollectionName, $edgeCollectionName, $filter = []) {
-		$propertyAndFilterKey = $targetCollectionName . serialize($filter);
+	protected function lazyGetNeighbor($edgeCollection, $targetCollection, $filter = []) {
+		$propertyAndFilterKey = $targetCollection . serialize($filter);
 		if (!array_key_exists($propertyAndFilterKey, $this->properties)) {
-			$target = $this->getDocumentHandler()->getNeighbor($this, $edgeCollectionName, $filter);
+			$target = $this->getDocumentHandler()->getNeighbor($this, $edgeCollection, $filter);
 			if ($target) {
 				$this->properties[$propertyAndFilterKey] = $target;
 			} else {
@@ -63,5 +63,9 @@ class Document
 			}
 		}
 		return $this->properties[$propertyAndFilterKey];
+	}
+	
+	protected function lazyAddNeighbor($document, $edgeCollection, $target) {
+		$this->getDocumentHandler()->addNeighbor($document, $edgeCollection, $target);
 	}
 }
