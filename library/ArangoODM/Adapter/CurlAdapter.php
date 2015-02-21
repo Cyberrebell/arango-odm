@@ -76,7 +76,7 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	function getNeighbor(Document $document, $edgeCollection) {
-		$result = $this->query('FOR d in host FILTER d._id=="' . $document->getId() . '" RETURN NEIGHBORS(host, ' . $edgeCollection . ', d, "any")');
+		$result = $this->query('FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" RETURN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any")');
 		return reset($result);
 	}
 	

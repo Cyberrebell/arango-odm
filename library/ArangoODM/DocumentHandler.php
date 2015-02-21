@@ -27,28 +27,34 @@ class DocumentHandler
 	}
 	
 	function add(Document $document) {
-		$this->adapter->add($document);
+		return $this->adapter->add($document);
 	}
 	
 	function update(Document $document) {
-		$this->adapter->update($document);
+		return $this->adapter->update($document);
 	}
 	
 	function delete(Document $document) {
-		$this->adapter->delete($document);
+		return $this->adapter->delete($document);
 	}
 	
 	function query($query) {
 		$documents = $this->adapter->query($query);
-		return $this->mapDocuments($documents);
+		$docs = $this->mapDocuments($documents);
+		if ($docs) {
+			return $docs;
+		} else {
+			return false;
+		}
 	}
 	
 	function findById($id) {
 		$document = $this->adapter->findById($id);
-		if (empty($document)) {
-			return false;
+		$doc = $this->mapDocument($document);
+		if ($doc) {
+			return $doc;
 		} else {
-			return $this->mapDocument($document);
+			return false;
 		}
 	}
 	
@@ -59,7 +65,12 @@ class DocumentHandler
 	
 	function findAll($collection) {
 		$documents = $this->adapter->findAll($collection);
-		return $this->mapDocuments($documents);
+		$docs = $this->mapDocuments($documents);
+		if ($docs) {
+			return $docs;
+		} else {
+			return false;
+		}
 	}
 	
 	function count($collection) {
@@ -70,7 +81,12 @@ class DocumentHandler
 		$documents = $this->adapter->getNeighbor($document, $edgeCollection);
 		$docs = [];
 		foreach ($documents as $document) {
-			$docs[$document['vertex']['_id']] = $this->mapDocument($document['vertex']);
+			$doc = $this->mapDocument($document['vertex']);
+			if ($doc) {
+				$docs[$document['vertex']['_id']] = $doc;
+			} else {
+				return false;	//break mapping if one document is invalid
+			}
 		}
 		return $docs;
 	}
@@ -78,14 +94,23 @@ class DocumentHandler
 	protected function mapDocuments(array $documents) {
 		$docs = [];
 		foreach ($documents as $document) {
-			$docs[$document['_id']] = $this->mapDocument($document);
+			$doc = $this->mapDocument($document);
+			if ($doc) {
+				$docs[$document['_id']] = $doc;
+			} else {
+				return false;	//break mapping if one document is invalid
+			}
 		}
 		return $docs;
 	}
 	
 	protected function mapDocument(array $document) {
-		$docId = $document['_id'];
-		$collectionName = substr($docId, 0, strpos($docId, '/'));	//get collection-name of result
-		return new Document($collectionName, $document);
+		if (array_key_exists('_id', $document)) {
+			$docId = $document['_id'];
+			$collectionName = substr($docId, 0, strpos($docId, '/'));	//get collection-name of result
+			return new Document($collectionName, $document);
+		} else {
+			return false;
+		}
 	}
 }
