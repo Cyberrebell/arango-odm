@@ -54,7 +54,11 @@ class CurlAdapter implements AdapterInterface
 	
 	function query($query) {
 		$result = $this->request($this->getBaseUrl() . 'cursor', self::METHOD_POST, ['query' => $query]);
-		return $result['result'];
+		if (array_key_exists('result', $result)) {
+			return $result['result'];
+		} else {
+			throw new \Exception($result['errorMessage']);
+		}
 	}
 	
 	function findById($id) {
@@ -75,9 +79,13 @@ class CurlAdapter implements AdapterInterface
 		return count($result['documents']);
 	}
 	
-	function getNeighbor(Document $document, $edgeCollection) {
-		$result = $this->query('FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" RETURN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any")');
-		return reset($result);
+	function getNeighbor(Document $document, $edgeCollection, $filter = []) {
+		if (empty($filter)) {
+			$result = $this->query('FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") RETURN n.vertex');
+		} else {
+			$result = $this->query('FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") FILTER ' . $this->filterToAqlFilter($filter, 'n.vertex', true) . ' RETURN n.vertex');
+		}
+		return $result;
 	}
 	
 	protected function request($url, $method, array $params = null) {
@@ -105,5 +113,20 @@ class CurlAdapter implements AdapterInterface
 	
 	protected function getBaseUrl() {
 		return $this->protocol . '://' . $this->ip . ':' . $this->port . '/_db/' . $this->database . '/_api/';
+	}
+	
+	protected function filterToAqlFilter(array $filter, $collectionAlias = 'd', $removeStartingAndSymbol = false) {
+		if (empty($filter)) {
+			return false;
+		} else {
+			$filterStr = '';
+			foreach ($filter as $property => $value) {
+				$filterStr .= ' && ' . $collectionAlias . '.' . $property . ' == "' . $value . '"';
+			}
+			if ($removeStartingAndSymbol) {
+				$filterStr = substr($filterStr, 4);
+			}
+			return $filterStr;
+		}
 	}
 }

@@ -52,9 +52,9 @@ class Document
 		return $this->properties;
 	}
 	
-	protected function lazyGetNeighbor($targetCollectionName, $edgeCollectionName) {
+	protected function lazyGetNeighbor($targetCollectionName, $edgeCollectionName, $filter = []) {
 		if (!array_key_exists($targetCollectionName, $this->properties)) {
-			$target = $this->getDocumentHandler()->getNeighbor($this, $edgeCollectionName);
+			$target = $this->getDocumentHandler()->getNeighbor($this, $edgeCollectionName, $filter);
 			if ($target) {
 				$this->properties[$targetCollectionName] = $target;
 			} else {

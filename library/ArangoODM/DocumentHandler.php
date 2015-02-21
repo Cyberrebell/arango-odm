@@ -77,18 +77,14 @@ class DocumentHandler
 		return $this->adapter->count($collection);
 	}
 	
-	function getNeighbor(Document $document, $edgeCollection) {
-		$documents = $this->adapter->getNeighbor($document, $edgeCollection);
-		$docs = [];
-		foreach ($documents as $document) {
-			$doc = $this->mapDocument($document['vertex']);
-			if ($doc) {
-				$docs[$document['vertex']['_id']] = $doc;
-			} else {
-				return false;	//break mapping if one document is invalid
-			}
+	function getNeighbor(Document $document, $edgeCollection, $filter = []) {
+		$documents = $this->adapter->getNeighbor($document, $edgeCollection, $filter);
+		$docs = $this->mapDocuments($documents);
+		if ($docs) {
+			return $docs;
+		} else {
+			return false;
 		}
-		return $docs;
 	}
 	
 	protected function mapDocuments(array $documents) {
