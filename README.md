@@ -1,2 +1,21 @@
 # arango-odm
-php odm for arango-db
+This library is an PHP ODM for ArangoDB. If offers a lot of helpful tools to work with your ArangoDB in your PHP-Project.
+
+# Warning: Early Development - The usage of this lib may change frequently!
+
+# What are the main features of the library?
+- [x] use replaceable adapters to access the database (atm only curl/http)
+- [x] use the DocumentHandler to add, update, delete, find or query with the database
+- [x] use ArangoDB edge-collections to connect your documents
+- [x] use Document-Getters to access connected Documents
+- [ ] use Document-Setters to change connections
+- [ ] create your collections using ArangoDB webinterface, let the ODM lib create matching Document-Classes to work with
+- [ ] get Document-Objects of the matching custom class back as db-results
+- [ ] optimized internal performance with help of performance benchmarks
+- [ ] improved documentation
+- [ ] PHPUnit tests
+- [ ] socket-adapter
+
+# How can i help?
+* You are welcome to test it and give issues to improve it.
+* You can star this project so that more devs will find it and give helpful issues

@@ -53,14 +53,15 @@ class Document
 	}
 	
 	protected function lazyGetNeighbor($targetCollectionName, $edgeCollectionName, $filter = []) {
-		if (!array_key_exists($targetCollectionName, $this->properties)) {
+		$propertyAndFilterKey = $targetCollectionName . serialize($filter);
+		if (!array_key_exists($propertyAndFilterKey, $this->properties)) {
 			$target = $this->getDocumentHandler()->getNeighbor($this, $edgeCollectionName, $filter);
 			if ($target) {
-				$this->properties[$targetCollectionName] = $target;
+				$this->properties[$propertyAndFilterKey] = $target;
 			} else {
 				return false;
 			}
 		}
-		return $this->properties[$targetCollectionName];
+		return $this->properties[$propertyAndFilterKey];
 	}
 }

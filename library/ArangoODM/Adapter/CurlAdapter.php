@@ -80,12 +80,12 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	function getNeighbor(Document $document, $edgeCollection, $filter = []) {
-		if (empty($filter)) {
-			$result = $this->query('FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") RETURN n.vertex');
-		} else {
-			$result = $this->query('FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") FILTER ' . $this->filterToAqlFilter($filter, 'n.vertex', true) . ' RETURN n.vertex');
+		$query = 'FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") ';
+		if (!empty($filter)) {
+			$query .= 'FILTER ' . $this->filterToAqlFilter($filter, 'n.vertex', true) . ' ';
 		}
-		return $result;
+		$query .= 'RETURN n.vertex';
+		return $this->query($query);
 	}
 	
 	protected function request($url, $method, array $params = null) {
