@@ -6,7 +6,7 @@ class Document
 {
 	protected static $documentHandler;
 	protected $properties;
-	private $collectionName;
+	protected $collectionName;
 	
 	function __construct($collectionName, array $properties = []) {
 		$this->collectionName = $collectionName;
@@ -21,6 +21,9 @@ class Document
 		self::$documentHandler = $dh;
 	}
 	
+	/**
+	 * @return DocumentHandler|boolean
+	 */
 	function getDocumentHandler() {
 		if (self::$documentHandler instanceof DocumentHandler) {
 			return self::$documentHandler;
@@ -47,5 +50,17 @@ class Document
 	
 	function getRawProperties() {
 		return $this->properties;
+	}
+	
+	protected function lazyGetNeighbor($targetCollectionName, $edgeCollectionName) {
+		if (!array_key_exists($targetCollectionName, $this->properties)) {
+			$target = $this->getDocumentHandler()->getNeighbor($this, $edgeCollectionName);
+			if ($target) {
+				$this->properties[$targetCollectionName] = $target;
+			} else {
+				return false;
+			}
+		}
+		return $this->properties[$targetCollectionName];
 	}
 }
