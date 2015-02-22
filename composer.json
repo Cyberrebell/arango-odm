@@ -20,6 +20,9 @@
         "php": ">=5.4.36",
         "ext-curl" : "*"
     },
+    "require-dev": {
+    	"zendframework/zend-code": "*"
+    }
     "autoload": {
         "psr-0": {
             "ArangoODM\\": "library/"
