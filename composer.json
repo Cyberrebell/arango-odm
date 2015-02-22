@@ -22,7 +22,7 @@
     },
     "require-dev": {
     	"zendframework/zend-code": "*"
-    }
+    },
     "autoload": {
         "psr-0": {
             "ArangoODM\\": "library/"
