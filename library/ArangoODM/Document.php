@@ -68,4 +68,8 @@ class Document
 	protected function lazyAddNeighbor($document, $edgeCollection, $target) {
 		$this->getDocumentHandler()->addNeighbor($document, $edgeCollection, $target);
 	}
+	
+	protected function lazyRemoveNeighbor($document, $edgeCollection, $target) {
+		$this->getDocumentHandler()->removeNeighbor($document, $edgeCollection, $target);
+	}
 }

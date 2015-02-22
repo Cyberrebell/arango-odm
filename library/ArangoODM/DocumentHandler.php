@@ -40,9 +40,8 @@ class DocumentHandler
 	
 	function query($query) {
 		$documents = $this->adapter->query($query);
-		$docs = $this->mapDocuments($documents);
-		if ($docs) {
-			return $docs;
+		if ($documents) {
+			return $this->mapDocuments($documents);
 		} else {
 			return false;
 		}
@@ -81,34 +80,24 @@ class DocumentHandler
 		$documents = $this->adapter->getNeighbor($document, $edgeCollection, $filter);
 		$docs = $this->mapDocuments($documents);
 		if ($docs) {
-			return $docs;
+			return $this->mapDocuments($documents);
 		} else {
 			return false;
 		}
 	}
 	
 	function addNeighbor($document, $edgeCollection, $target) {
-		if (is_array($document)) {
-			$source = $document;
-		} else if ($document instanceof Document) {
-			$source = [$document];
-		} else {
-			return false;
-		}
-		
-		if (is_array($target)) {
-			$destination = $target;
-		} else if ($target instanceof Document) {
-			$destination = [$target];
-		} else {
-			return false;
-		}
-		
+		$source = $this->ensureArray($document);
+		$destination = $this->ensureArray($target);
+				
 		$this->ensureEdge($source, $edgeCollection, $destination);
 	}
 	
 	function removeNeighbor($document, $edgeCollection, $target, $deleteNeighbor = false) {
-	
+		$source = $this->ensureArray($document);
+		$destination = $this->ensureArray($target);
+		
+		$this->ensureNoEdge($source, $edgeCollection, $destination);
 	}
 	
 	function setNeighbor($document, $edgeCollection, $target) {
@@ -138,6 +127,16 @@ class DocumentHandler
 		}
 	}
 	
+	protected function ensureArray($document) {
+		if (is_array($document)) {
+			return $document;
+		} else if ($document instanceof Document) {
+			return [$document];
+		} else {
+			return false;
+		}
+	}
+	
 	protected function ensurePresence($document) {
 		$documentsToAdd = [];
 		foreach ($document as $singleDoc) {
@@ -155,18 +154,27 @@ class DocumentHandler
 		$this->ensurePresence($source);
 		$this->ensurePresence($target);
 		
-		$sourceArray = '[';
-		foreach ($source as $src) {
-			$sourceArray .= '"' . $src->getId() . '",';
-		}
-		$sourceArray = substr($sourceArray, 0, -1) . ']';
+		$sourceArray = $this->getJsonIdArray($source);
+		$targetArray = $this->getJsonIdArray($target);
 		
-		$targetArray = '[';
-		foreach ($target as $tar) {
-			$targetArray .= '"' . $tar->getId() . '",';
-		}
-		$targetArray = substr($targetArray, 0, -1) . ']';
+		$this->query('FOR s IN ' . $sourceArray . ' FOR d IN ' . $targetArray . ' LET matches = (FOR x IN ' . $edgeCollection . ' FILTER x._from == s && x._to == d RETURN s._key) FILTER s._key NOT IN matches INSERT { _from: s, _to: d } IN ' . $edgeCollection);
+	}
+	
+	protected function ensureNoEdge($source, $edgeCollection, $target) {
+// 		$this->ensurePresence($source);
+// 		$this->ensurePresence($target);
+	
+		$sourceArray = $this->getJsonIdArray($source);
+		$targetArray = $this->getJsonIdArray($target);
 		
-		$this->query('FOR s IN ' . $sourceArray . ' FOR d IN ' . $targetArray . ' LET matches = (FOR x IN ' . $edgeCollection . ' FILTER x._from == s && x._to == d RETURN s._id) FILTER s._id NOT IN matches INSERT { _from: s, _to: d } IN ' . $edgeCollection);
+		$this->query('FOR s IN ' . $sourceArray . ' FOR d IN ' . $targetArray . ' LET matches = (FOR x IN ' . $edgeCollection . ' FILTER x._from == s && x._to == d RETURN x._key) REMOVE { _key: matches[0] } IN ' . $edgeCollection);
+	}
+	
+	protected function getJsonIdArray(array $documents) {
+		$documentArray = '[';
+		foreach ($documents as $doc) {
+			$documentArray .= '"' . $doc->getId() . '",';
+		}
+		return substr($documentArray, 0, -1) . ']';
 	}
 }
