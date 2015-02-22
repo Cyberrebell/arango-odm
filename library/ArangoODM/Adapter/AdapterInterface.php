@@ -15,6 +15,5 @@ interface AdapterInterface
 	function findById($id);
 	function findBy(Document $document);
 	function findAll($collection);
-	function count($collection);
 	function getNeighbor(Document $document, $edgeCollection, $filter);
 }

@@ -73,7 +73,11 @@ class DocumentHandler
 	}
 	
 	function count($collection) {
-		return $this->adapter->count($collection);
+		$result = $this->query('RETURN LENGTH(' . $collection . ')');
+		if (is_array($result)) {
+			$result = reset($result);
+		}
+		return (int) $result;
 	}
 	
 	function getNeighbor(Document $document, $edgeCollection, $filter = []) {
@@ -101,7 +105,7 @@ class DocumentHandler
 	}
 	
 	function setNeighbor($document, $edgeCollection, $target) {
-	
+		//todo
 	}
 	
 	protected function mapDocuments(array $documents) {
@@ -117,8 +121,10 @@ class DocumentHandler
 		return $docs;
 	}
 	
-	protected function mapDocument(array $document) {
-		if (array_key_exists('_id', $document)) {
+	protected function mapDocument($document) {
+		if (!is_array($document)) {
+			return $document;
+		} else if (array_key_exists('_id', $document)) {
 			$docId = $document['_id'];
 			$collectionName = substr($docId, 0, strpos($docId, '/'));	//get collection-name of result
 			return new Document($collectionName, $document);
@@ -161,9 +167,6 @@ class DocumentHandler
 	}
 	
 	protected function ensureNoEdge($source, $edgeCollection, $target) {
-// 		$this->ensurePresence($source);
-// 		$this->ensurePresence($target);
-	
 		$sourceArray = $this->getJsonIdArray($source);
 		$targetArray = $this->getJsonIdArray($target);
 		

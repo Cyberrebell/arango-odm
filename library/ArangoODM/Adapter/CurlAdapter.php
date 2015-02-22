@@ -7,6 +7,8 @@ use ArangoODM\Document;
 
 class CurlAdapter implements AdapterInterface
 {
+	const QUERY_RESULT_LIMIT = 50000;
+	
 	const METHOD_GET = 'GET';
 	const METHOD_POST = 'POST';
 	const METHOD_PUT = 'PUT';
@@ -53,8 +55,10 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	function query($query) {
-		$result = $this->request($this->getBaseUrl() . 'cursor', self::METHOD_POST, ['query' => $query]);
-		if (array_key_exists('result', $result)) {
+		$result = $this->request($this->getBaseUrl() . 'cursor', self::METHOD_POST, ['query' => $query,'options' => ['batchSize' => self::QUERY_RESULT_LIMIT]]);
+		if (!is_array($result)) {
+			throw new \Exception('Request failed!');
+		} else if(array_key_exists('result', $result)) {
 			return $result['result'];
 		} else {
 			throw new \Exception($result['errorMessage']);
@@ -71,12 +75,7 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	function findAll($collection) {
-		return $this->query('FOR d IN ' . $collection . ' RETURN d');
-	}
-	
-	function count($collection) {
-		$result = $this->request($this->getBaseUrl() . 'document?collection=' . $collection . '&type=id', self::METHOD_GET);
-		return count($result['documents']);
+		return $this->query('FOR d IN ' . $collection . ' LIMIT ' . self::QUERY_RESULT_LIMIT . ' RETURN d');
 	}
 	
 	function getNeighbor(Document $document, $edgeCollection, $filter) {
