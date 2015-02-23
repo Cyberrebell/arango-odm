@@ -7,8 +7,6 @@ use ArangoODM\Document;
 
 class CurlAdapter implements AdapterInterface
 {
-	const QUERY_RESULT_LIMIT = 50000;
-	
 	const METHOD_GET = 'GET';
 	const METHOD_POST = 'POST';
 	const METHOD_PUT = 'PUT';
@@ -20,6 +18,7 @@ class CurlAdapter implements AdapterInterface
 	protected $username = 'root';
 	protected $password = '';
 	protected $database = '_system';
+	protected $queryResultLimit = 50000;
 	
 	function __construct(Config $config) {
 		if ($config->get('ip')) {
@@ -40,6 +39,9 @@ class CurlAdapter implements AdapterInterface
 		if ($config->get('database')) {
 			$this->database = $config->get('database');
 		}
+		if ($config->get('query_result_limit')) {
+			$this->queryResultLimit = $config->get('query_result_limit');
+		}
 	}
 	
 	function add(Document $document) {
@@ -55,7 +57,7 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	function query($query) {
-		$result = $this->request($this->getBaseUrl() . 'cursor', self::METHOD_POST, ['query' => $query,'options' => ['batchSize' => self::QUERY_RESULT_LIMIT]]);
+		$result = $this->request($this->getBaseUrl() . 'cursor', self::METHOD_POST, ['query' => $query,'options' => ['batchSize' => $this->queryResultLimit]]);
 		if (!is_array($result)) {
 			throw new \Exception('Request failed!');
 		} else if(array_key_exists('result', $result)) {
@@ -75,7 +77,7 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	function findAll($collection) {
-		return $this->query('FOR d IN ' . $collection . ' LIMIT ' . self::QUERY_RESULT_LIMIT . ' RETURN d');
+		return $this->query('FOR d IN ' . $collection . ' LIMIT ' . $this->queryResultLimit . ' RETURN d');
 	}
 	
 	function getNeighbor(Document $document, $edgeCollection, $filter) {
@@ -91,7 +93,8 @@ class CurlAdapter implements AdapterInterface
 		$handle = curl_init($url);
 		$options = [
 			CURLOPT_RETURNTRANSFER => 1,
-			CURLOPT_CUSTOMREQUEST => $method
+			CURLOPT_CUSTOMREQUEST => $method,
+			CURLOPT_USERPWD => $this->username . ':' . $this->password
 		];
 		
 		if ($method == self::METHOD_POST || $method == self::METHOD_PUT) {
