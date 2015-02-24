@@ -16,6 +16,8 @@ class DocumentGenerator
 	protected $properties = [];
 	protected $edgeProperties = [];
 	
+	protected static $skipProperties = ['_id', '_rev', '_key'];
+	
 	function __construct($collection, $namespace) {
 		if ($collection != ucfirst($collection)) {
 			throw new \Exception('Collections must start with upper case but ' . $collection . ' does not. Please fix this!');
@@ -25,7 +27,9 @@ class DocumentGenerator
 	}
 	
 	function addProperty($name) {
-		$this->properties[$name] = $name;
+		if (!in_array($name, self::$skipProperties)) {
+			$this->properties[$name] = $name;
+		}
 	}
 	
 	function addEdgeProperty($edgeCollection, $targetCollection) {
@@ -36,9 +40,9 @@ class DocumentGenerator
 		$classGenerator = new ClassGenerator($this->collection, $this->namespace);
 		$classGenerator->addUse('ArangoODM\Document', 'ArangoDoc');
 		$classGenerator->setExtendedClass('ArangoDoc');
-		$classGenerator->addProperty('collectionName', $this->collection, PropertyGenerator::FLAG_PRIVATE);
+		$classGenerator->addProperty('collectionName', $this->collection, PropertyGenerator::FLAG_PROTECTED);
 		$classGenerator->addMethods($this->getMethods());
-		return $classGenerator->generate();
+		return '<?php' . "\n\n" . $classGenerator->generate();
 	}
 	
 	protected function getMethods() {

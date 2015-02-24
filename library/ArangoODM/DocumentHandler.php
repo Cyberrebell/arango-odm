@@ -3,6 +3,7 @@
 namespace ArangoODM;
 
 use ArangoODM\Adapter\CurlAdapter;
+use ArangoODM\Adapter\AdapterInterface;
 
 class DocumentHandler
 {
@@ -11,6 +12,7 @@ class DocumentHandler
 	
 	protected $config;
 	protected $adapter;
+	protected $documentNamespaces = [];
 	
 	function __construct(array $config = []) {
 		$this->config = new Config($config);
@@ -21,6 +23,10 @@ class DocumentHandler
 				break;
 			default:
 				$this->adapter = new CurlAdapter($this->config);
+		}
+		
+		if (is_array($this->config->get('document_namespaces'))) {
+			$this->documentNamespaces = $this->config->get('document_namespaces');
 		}
 		
 		Document::setDocumentHandler($this);
@@ -57,12 +63,12 @@ class DocumentHandler
 		}
 	}
 	
-	function findBy(Document $document) {
+	function findBy(Document $document, $limit = false) {
 		$documents = $this->adapter->findBy($document);
 		return $this->mapDocuments($documents);
 	}
 	
-	function findAll($collection) {
+	function findAll($collection, $limit = false) {
 		$documents = $this->adapter->findAll($collection);
 		$docs = $this->mapDocuments($documents);
 		if ($docs) {
@@ -80,7 +86,7 @@ class DocumentHandler
 		return (int) $result;
 	}
 	
-	function getNeighbor(Document $document, $edgeCollection, $filter = []) {
+	function getNeighbor(Document $document, $edgeCollection, $filter = [], $limit = false) {
 		$documents = $this->adapter->getNeighbor($document, $edgeCollection, $filter);
 		$docs = $this->mapDocuments($documents);
 		if ($docs) {
@@ -108,6 +114,40 @@ class DocumentHandler
 		//todo
 	}
 	
+	function generateDocuments($targetDirectory, $namespace) {
+		$collections = $this->adapter->getCollections();
+		$documentCollections = [];
+		$edgeCollections = [];
+		foreach ($collections as $collectionName => $collectionType) {
+			if ($collectionType == AdapterInterface::COLLECTION_TYPE_DOCUMENT) {
+				$documentCollections[$collectionName] = new DocumentGenerator($collectionName, $namespace);
+				foreach ($this->findAll($collectionName) as $document) {
+					foreach ($document->getRawProperties() as $property => $value) {
+						$documentCollections[$collectionName]->addProperty($property);
+					}
+				}
+			} else if ($collectionType == AdapterInterface::COLLECTION_TYPE_EDGE) {
+				$edgeCollections[] = $collectionName;
+			}
+		}
+		foreach ($edgeCollections as $collectionName) {
+			$splitted = explode('_', $collectionName);
+			$collectionA = reset($splitted);
+			$collectionB = end($splitted);
+			if (array_key_exists($collectionA, $documentCollections) && array_key_exists($collectionB, $documentCollections)) {
+				$documentCollections[$collectionA]->addEdgeProperty($collectionName, $collectionB);
+				$documentCollections[$collectionB]->addEdgeProperty($collectionName, $collectionA);
+			}
+		}
+		$targetDirectoryPath = $targetDirectory;
+		if (substr($targetDirectoryPath, -1, 1) != DIRECTORY_SEPARATOR) {
+			$targetDirectoryPath .= DIRECTORY_SEPARATOR;
+		}
+		foreach ($documentCollections as $collectionName => $documentGenerator) {
+			file_put_contents($targetDirectoryPath . $collectionName . '.php', $documentGenerator->getClass());
+		}
+	}
+	
 	protected function mapDocuments(array $documents) {
 		$docs = [];
 		foreach ($documents as $document) {
@@ -127,10 +167,25 @@ class DocumentHandler
 		} else if (array_key_exists('_id', $document)) {
 			$docId = $document['_id'];
 			$collectionName = substr($docId, 0, strpos($docId, '/'));	//get collection-name of result
-			return new Document($collectionName, $document);
+			$documentClass = $this->getDocumentNamespace($collectionName);
+			if ($documentClass) {
+				return new $documentClass($document);
+			} else {
+				return new Document($collectionName, $document);
+			}
 		} else {
 			return false;
 		}
+	}
+	
+	protected function getDocumentNamespace($collection) {
+		foreach ($this->documentNamespaces as $namespace) {
+			$documentNamespace = $namespace . '\\' . $collection;
+			if (class_exists($documentNamespace)) {
+				return $documentNamespace;
+			}
+		}
+		return false;
 	}
 	
 	protected function ensureArray($document) {

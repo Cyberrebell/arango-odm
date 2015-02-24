@@ -71,22 +71,41 @@ class CurlAdapter implements AdapterInterface
 		return $this->request($this->getBaseUrl() . 'document/' . $id, self::METHOD_GET);
 	}
 	
-	function findBy(Document $document) {
+	function findBy(Document $document, $limit = false) {
 		$result = $this->request($this->getBaseUrl() . 'simple/by-example', self::METHOD_PUT, ['collection' => $document->getCollectionName(), 'example' => $document->getRawProperties()]);
 		return $result['result'];
 	}
 	
-	function findAll($collection) {
-		return $this->query('FOR d IN ' . $collection . ' LIMIT ' . $this->queryResultLimit . ' RETURN d');
+	function findAll($collection, $limit = false) {
+		if ($limit) {
+			$resultLimit = $limit;
+		} else {
+			$resultLimit = $this->queryResultLimit;
+		}
+		return $this->query('FOR d IN ' . $collection . ' LIMIT ' . $resultLimit . ' RETURN d');
 	}
 	
-	function getNeighbor(Document $document, $edgeCollection, $filter) {
+	function getNeighbor(Document $document, $edgeCollection, $filter, $limit = false) {
+		if ($limit) {
+			$resultLimit = $limit;
+		} else {
+			$resultLimit = $this->queryResultLimit;
+		}
 		$query = 'FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") ';
 		if (!empty($filter)) {
 			$query .= 'FILTER ' . $this->filterToAqlFilter($filter, 'n.vertex', true) . ' ';
 		}
-		$query .= 'RETURN n.vertex';
+		$query .= 'LIMIT ' . $resultLimit . ' RETURN n.vertex';
 		return $this->query($query);
+	}
+	
+	function getCollections() {
+		$collections = $this->request($this->getBaseUrl() . 'collection?excludeSystem=true', self::METHOD_GET);
+		$reformedCollections = [];
+		foreach ($collections['collections'] as $collection) {
+			$reformedCollections[$collection['name']] = $collection['type'];
+		}
+		return $reformedCollections;
 	}
 	
 	protected function request($url, $method, array $params = null) {
