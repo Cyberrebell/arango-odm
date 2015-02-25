@@ -13,6 +13,7 @@ class DocumentHandler
 	protected $config;
 	protected $adapter;
 	protected $documentNamespaces = [];
+	protected $documentNamespaceMap = [];
 	
 	function __construct(array $config = []) {
 		$this->config = new Config($config);
@@ -150,8 +151,12 @@ class DocumentHandler
 	
 	protected function mapDocuments(array $documents) {
 		$docs = [];
+		$firstDocId = reset($documents);
+		$firstDocId = $firstDocId['_id'];
+		$collectionName = substr($firstDocId, 0, strpos($firstDocId, '/'));
+		$collectionNamespace = $this->getDocumentNamespace($collectionName);
 		foreach ($documents as $document) {
-			$doc = $this->mapDocument($document);
+			$doc = $this->mapDocument($document, $collectionName, $collectionNamespace);
 			if ($doc) {
 				$docs[$document['_id']] = $doc;
 			} else {
@@ -161,20 +166,15 @@ class DocumentHandler
 		return $docs;
 	}
 	
-	protected function mapDocument($document) {
-		if (!is_array($document)) {
-			return $document;
-		} else if (array_key_exists('_id', $document)) {
-			$docId = $document['_id'];
-			$collectionName = substr($docId, 0, strpos($docId, '/'));	//get collection-name of result
-			$documentClass = $this->getDocumentNamespace($collectionName);
-			if ($documentClass) {
-				return new $documentClass($document);
+	protected function mapDocument($document, $collection = false, $documentNamespace = false) {
+		if (is_array($document)) {
+			if ($documentNamespace) {
+				return new $documentNamespace($document);
 			} else {
-				return new Document($collectionName, $document);
+				return new Document($collection, $document);
 			}
 		} else {
-			return false;
+			return $document;
 		}
 	}
 	

@@ -18,7 +18,7 @@ class CurlAdapter implements AdapterInterface
 	protected $username = 'root';
 	protected $password = '';
 	protected $database = '_system';
-	protected $queryResultLimit = 50000;
+	protected $queryResultLimit = 100000;
 	
 	function __construct(Config $config) {
 		if ($config->get('ip')) {
