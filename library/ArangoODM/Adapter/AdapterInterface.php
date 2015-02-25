@@ -11,7 +11,7 @@ interface AdapterInterface
 	const COLLECTION_TYPE_EDGE = 3;
 	
 	function __construct(Config $config);
-	function add(Document $document);
+	function add($document);
 	function update(Document $document);
 	function delete(Document $document);
 	function query($query);

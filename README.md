@@ -17,12 +17,12 @@ This library is an PHP ODM for ArangoDB. If offers a lot of helpful tools to wor
 - [ ] socket-adapter
 
 # How can i help?
-* You are welcome to test it and give issues to improve it.
-* You can star this project so that more devs will find it and give helpful issues
+* You are welcome to test it and give issues to improve it
 
 # My personal benchmark-results using this library
 * Insert 1,3k and 1k documents in two different collections in 1,06 sec (no bulk insert. Each document a single request)
-* Get the inserted 1,3k and 1k from the two different collections as Document objects in 0,03 sec
+* Insert 1 mio documents bulk: ~11 sec
+* Get the inserted 1,3k and 1k from the two different collections as Document objects in 0,04 sec
 * Connect 1,3k with 1k in edge collection in ~25 sec (means to create 1,3 mio edges)
-* Get the first 50k of the created edges in 0,71 sec (50k will probably be the limit my lib will cut)
-* Get all 1,3 mio edges in ~19 sec (i had to increase the php memory limit first to 8GB xD)
+* Get the first 50k of the created edges in 1,02 sec
+* Get all 1,3 mio edges in ~28 sec

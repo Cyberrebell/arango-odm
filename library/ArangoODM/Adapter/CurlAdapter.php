@@ -18,7 +18,7 @@ class CurlAdapter implements AdapterInterface
 	protected $username = 'root';
 	protected $password = '';
 	protected $database = '_system';
-	protected $queryResultLimit = 100000;
+	protected $queryResultLimit = 10000000;
 	
 	function __construct(Config $config) {
 		if ($config->get('ip')) {
@@ -44,8 +44,17 @@ class CurlAdapter implements AdapterInterface
 		}
 	}
 	
-	function add(Document $document) {
-		return $this->request($this->getBaseUrl() . 'document?collection=' . $document->getCollectionName(), self::METHOD_POST, $document->getRawProperties());
+	function add($document) {
+		if ($document instanceof Document) {
+			return $this->request($this->getBaseUrl() . 'document?collection=' . $document->getCollectionName(), self::METHOD_POST, $document->getRawProperties());
+		} else {
+			$bulkJson = '';
+			foreach ($document as $singleDocument) {
+				$bulkJson .= json_encode($singleDocument->getRawProperties(), JSON_FORCE_OBJECT) . "\n";
+			}
+			$collectionName = reset($document)->getCollectionName();
+			return $this->request($this->getBaseUrl() . 'import?type=documents&collection=' . $collectionName, self::METHOD_POST, $bulkJson);
+		}
 	}
 	
 	function update(Document $document) {
@@ -108,7 +117,7 @@ class CurlAdapter implements AdapterInterface
 		return $reformedCollections;
 	}
 	
-	protected function request($url, $method, array $params = null) {
+	protected function request($url, $method, $params = null) {
 		$handle = curl_init($url);
 		$options = [
 			CURLOPT_RETURNTRANSFER => 1,
@@ -117,7 +126,11 @@ class CurlAdapter implements AdapterInterface
 		];
 		
 		if ($method == self::METHOD_POST || $method == self::METHOD_PUT) {
-			$jsonParams = json_encode($params, JSON_FORCE_OBJECT);
+			if (is_array($params)) {
+				$jsonParams = json_encode($params, JSON_FORCE_OBJECT);
+			} else {
+				$jsonParams = $params;
+			}
 			$options[CURLOPT_POSTFIELDS] = $jsonParams;
 			$options[CURLOPT_HTTPHEADER] = [
 				'Content-Type: application/json',

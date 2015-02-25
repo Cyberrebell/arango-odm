@@ -33,7 +33,7 @@ class DocumentHandler
 		Document::setDocumentHandler($this);
 	}
 	
-	function add(Document $document) {
+	function add($document) {
 		return $this->adapter->add($document);
 	}
 	
