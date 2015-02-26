@@ -34,15 +34,27 @@ class DocumentHandler
 	}
 	
 	function add($document) {
-		return $this->adapter->add($document);
+		$this->adapter->add($document);
 	}
 	
-	function update(Document $document) {
-		return $this->adapter->update($document);
+	function update($document) {
+		if (is_array($document)) {
+			foreach ($document as $singleDocument) {
+				$this->adapter->update($singleDocument);
+			}
+		} else {
+			return $this->adapter->update($document);
+		}
 	}
 	
 	function delete(Document $document) {
-		return $this->adapter->delete($document);
+		if (is_array($document)) {
+			foreach ($document as $singleDocument) {
+				$this->adapter->delete($singleDocument);
+			}
+		} else {
+			return $this->adapter->delete($document);
+		}
 	}
 	
 	function query($query) {

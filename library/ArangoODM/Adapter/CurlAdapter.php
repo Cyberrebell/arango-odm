@@ -46,7 +46,13 @@ class CurlAdapter implements AdapterInterface
 	
 	function add($document) {
 		if ($document instanceof Document) {
-			return $this->request($this->getBaseUrl() . 'document?collection=' . $document->getCollectionName(), self::METHOD_POST, $document->getRawProperties());
+			$result = $this->request($this->getBaseUrl() . 'document?collection=' . $document->getCollectionName(), self::METHOD_POST, $document->getRawProperties());
+			if (is_array($result)) {
+				$document->_id = $result['_id'];
+				$document->_key = $result['_key'];
+				$document->_rev = $result['_rev'];
+			}
+			return $result;
 		} else {
 			$bulkJson = '';
 			foreach ($document as $singleDocument) {

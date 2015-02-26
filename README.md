@@ -18,11 +18,3 @@ This library is an PHP ODM for ArangoDB. If offers a lot of helpful tools to wor
 
 # How can i help?
 * You are welcome to test it and give issues to improve it
-
-# My personal benchmark-results using this library
-* Insert 1,3k and 1k documents in two different collections in 1,06 sec (no bulk insert. Each document a single request)
-* Insert 1 mio documents bulk: ~11 sec
-* Get the inserted 1,3k and 1k from the two different collections as Document objects in 0,04 sec
-* Connect 1,3k with 1k in edge collection in ~25 sec (means to create 1,3 mio edges)
-* Get the first 50k of the created edges in 1,02 sec
-* Get all 1,3 mio edges in ~28 sec
