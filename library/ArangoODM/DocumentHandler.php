@@ -134,9 +134,12 @@ class DocumentHandler
 		foreach ($collections as $collectionName => $collectionType) {
 			if ($collectionType == AdapterInterface::COLLECTION_TYPE_DOCUMENT) {
 				$documentCollections[$collectionName] = new DocumentGenerator($collectionName, $namespace);
-				foreach ($this->findAll($collectionName) as $document) {
-					foreach ($document->getRawProperties() as $property => $value) {
-						$documentCollections[$collectionName]->addProperty($property);
+				$documents = $this->findAll($collectionName);
+				if ($documents) {
+					foreach ($documents as $document) {
+						foreach ($document->getRawProperties() as $property => $value) {
+							$documentCollections[$collectionName]->addProperty($property);
+						}
 					}
 				}
 			} else if ($collectionType == AdapterInterface::COLLECTION_TYPE_EDGE) {
