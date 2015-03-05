@@ -12,17 +12,16 @@ class CurlAdapter implements AdapterInterface
 	const METHOD_PUT = 'PUT';
 	const METHOD_DELETE = 'DELETE';
 	
-	protected $ip = '127.0.0.1';
+	protected $hosts = ['127.0.0.1' => ['_system' => ['username' => 'root', 'password' => '']]];	//default arango settings
 	protected $port = '8529';
 	protected $protocol = 'http';
-	protected $username = 'root';
-	protected $password = '';
-	protected $database = '_system';
 	protected $queryResultLimit = 10000000;
+	protected $selectedHost = '127.0.0.1';
+	protected $selectedDatabase = '_system';
 	
 	function __construct(Config $config) {
-		if ($config->get('ip')) {
-			$this->ip = $config->get('ip');
+		if ($config->get('query_result_limit')) {
+			$this->queryResultLimit = $config->get('query_result_limit');
 		}
 		if ($config->get('port')) {
 			$this->port = $config->get('port');
@@ -30,18 +29,22 @@ class CurlAdapter implements AdapterInterface
 		if ($config->get('protocol')) {
 			$this->protocol = $config->get('protocol');
 		}
-		if ($config->get('username')) {
-			$this->username = $config->get('username');
+		if ($config->get('hosts')) {
+			$this->hosts = $config->get('hosts');
 		}
-		if ($config->get('password')) {
-			$this->password = $config->get('password');
+	}
+	
+	function selectDatabase($databaseName) {
+		foreach ($this->hosts as $host => $databases) {
+			foreach ($databases as $db => $settings) {
+				if ($db == $databaseName) {
+					$this->selectedHost = $host;
+					$this->selectedDatabase = $db;
+					return true;
+				}
+			}
 		}
-		if ($config->get('database')) {
-			$this->database = $config->get('database');
-		}
-		if ($config->get('query_result_limit')) {
-			$this->queryResultLimit = $config->get('query_result_limit');
-		}
+		return false;
 	}
 	
 	function add($document) {
@@ -128,7 +131,7 @@ class CurlAdapter implements AdapterInterface
 		$options = [
 			CURLOPT_RETURNTRANSFER => 1,
 			CURLOPT_CUSTOMREQUEST => $method,
-			CURLOPT_USERPWD => $this->username . ':' . $this->password
+			CURLOPT_USERPWD => $this->getUsernamePasswordStr()
 		];
 		
 		if ($method == self::METHOD_POST || $method == self::METHOD_PUT) {
@@ -152,7 +155,12 @@ class CurlAdapter implements AdapterInterface
 	}
 	
 	protected function getBaseUrl() {
-		return $this->protocol . '://' . $this->ip . ':' . $this->port . '/_db/' . $this->database . '/_api/';
+		return $this->protocol . '://' . $this->selectedHost . ':' . $this->port . '/_db/' . $this->selectedDatabase . '/_api/';
+	}
+	
+	protected function getUsernamePasswordStr() {
+		$login = $this->hosts[$this->selectedHost][$this->selectedDatabase];
+		return $login['username'] . ':' . $login['password'];
 	}
 	
 	protected function filterToAqlFilter(array $filter, $collectionAlias = 'd', $removeStartingAndSymbol = false) {

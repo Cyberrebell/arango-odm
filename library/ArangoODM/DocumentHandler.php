@@ -5,20 +5,13 @@ namespace ArangoODM;
 use ArangoODM\Adapter\CurlAdapter;
 use ArangoODM\Adapter\AdapterInterface;
 
-class DocumentHandler
+class DocumentHandler extends ObjectHandler
 {
 	const CONNECTOR_SOCKET = 'sock';
 	const CONNECTOR_CURL = 'curl';
 	
-	protected $config;
-	protected $adapter;
-	protected $documentNamespaces = [];
-	protected $documentNamespaceMap = [];
-	
-	function __construct(array $config = []) {
-		$this->config = new Config($config);
-		
-		switch ($this->config->get('connector')) {
+	function setupAdapter(Config $config) {
+		switch ($config->get('connector')) {
 			case $this::CONNECTOR_SOCKET:
 				$this->adapter = false;
 				break;
@@ -26,11 +19,7 @@ class DocumentHandler
 				$this->adapter = new CurlAdapter($this->config);
 		}
 		
-		if (is_array($this->config->get('document_namespaces'))) {
-			$this->documentNamespaces = $this->config->get('document_namespaces');
-		}
-		
-		Document::setDocumentHandler($this);
+		Document::setObjectHandler($this);
 	}
 	
 	function add($document) {
@@ -47,7 +36,7 @@ class DocumentHandler
 		}
 	}
 	
-	function delete(Document $document) {
+	function delete($document) {
 		if (is_array($document)) {
 			foreach ($document as $singleDocument) {
 				$this->adapter->delete($singleDocument);
@@ -76,8 +65,8 @@ class DocumentHandler
 		}
 	}
 	
-	function findBy(Document $document, $limit = false) {
-		$documents = $this->adapter->findBy($document);
+	function findBy(Object $object, $limit = false) {
+		$documents = $this->adapter->findBy($object);
 		return $this->mapDocuments($documents);
 	}
 	
@@ -127,49 +116,12 @@ class DocumentHandler
 		//todo
 	}
 	
-	function generateDocuments($targetDirectory, $namespace) {
-		$collections = $this->adapter->getCollections();
-		$documentCollections = [];
-		$edgeCollections = [];
-		foreach ($collections as $collectionName => $collectionType) {
-			if ($collectionType == AdapterInterface::COLLECTION_TYPE_DOCUMENT) {
-				$documentCollections[$collectionName] = new DocumentGenerator($collectionName, $namespace);
-				$documents = $this->findAll($collectionName);
-				if ($documents) {
-					foreach ($documents as $document) {
-						foreach ($document->getRawProperties() as $property => $value) {
-							$documentCollections[$collectionName]->addProperty($property);
-						}
-					}
-				}
-			} else if ($collectionType == AdapterInterface::COLLECTION_TYPE_EDGE) {
-				$edgeCollections[] = $collectionName;
-			}
-		}
-		foreach ($edgeCollections as $collectionName) {
-			$splitted = explode('_', $collectionName);
-			$collectionA = reset($splitted);
-			$collectionB = end($splitted);
-			if (array_key_exists($collectionA, $documentCollections) && array_key_exists($collectionB, $documentCollections)) {
-				$documentCollections[$collectionA]->addEdgeProperty($collectionName, $collectionB);
-				$documentCollections[$collectionB]->addEdgeProperty($collectionName, $collectionA);
-			}
-		}
-		$targetDirectoryPath = $targetDirectory;
-		if (substr($targetDirectoryPath, -1, 1) != DIRECTORY_SEPARATOR) {
-			$targetDirectoryPath .= DIRECTORY_SEPARATOR;
-		}
-		foreach ($documentCollections as $collectionName => $documentGenerator) {
-			file_put_contents($targetDirectoryPath . $collectionName . '.php', $documentGenerator->getClass());
-		}
-	}
-	
 	protected function mapDocuments(array $documents) {
 		$docs = [];
 		$firstDocId = reset($documents);
 		$firstDocId = $firstDocId['_id'];
 		$collectionName = substr($firstDocId, 0, strpos($firstDocId, '/'));
-		$collectionNamespace = $this->getDocumentNamespace($collectionName);
+		$collectionNamespace = $this->getObjectNamespace($collectionName);
 		foreach ($documents as $document) {
 			$doc = $this->mapDocument($document, $collectionName, $collectionNamespace);
 			if ($doc) {
@@ -191,16 +143,6 @@ class DocumentHandler
 		} else {
 			return $document;
 		}
-	}
-	
-	protected function getDocumentNamespace($collection) {
-		foreach ($this->documentNamespaces as $namespace) {
-			$documentNamespace = $namespace . '\\' . $collection;
-			if (class_exists($documentNamespace)) {
-				return $documentNamespace;
-			}
-		}
-		return false;
 	}
 	
 	protected function ensureArray($document) {

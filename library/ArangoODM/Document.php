@@ -2,9 +2,8 @@
 
 namespace ArangoODM;
 
-class Document
+class Document extends Object
 {
-	protected static $documentHandler;
 	protected $properties;
 	protected $collectionName;
 	
@@ -15,21 +14,6 @@ class Document
 	
 	function getCollectionName() {
 		return $this->collectionName;
-	}
-	
-	static function setDocumentHandler(DocumentHandler $dh) {
-		self::$documentHandler = $dh;
-	}
-	
-	/**
-	 * @return DocumentHandler|boolean
-	 */
-	function getDocumentHandler() {
-		if (self::$documentHandler instanceof DocumentHandler) {
-			return self::$documentHandler;
-		} else {
-			return false;
-		}
 	}
 	
 	function __set($property, $value) {
