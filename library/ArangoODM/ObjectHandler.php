@@ -2,13 +2,19 @@
 
 namespace ArangoODM;
 
+use ArangoODM\Adapter\AdapterInterface;
+
 abstract class ObjectHandler
 {
 	protected $config;
+	/**
+	 * @var \ArangoODM\Adapter\AdapterInterface
+	 */
 	protected $adapter;
 	
 	protected $objectNamespaces = [];
 	protected $objectNamespaceMap = [];
+	protected $defaultNamespace;
 	
 	function __construct(array $config = []) {
 		$this->config = new Config($config);
@@ -30,28 +36,34 @@ abstract class ObjectHandler
 	abstract function findAll($collection, $limit = false);
 	abstract function count($collection);
 	
-	protected function getObjectNamespace($collection) {
-		if (array_key_exists($collection, $this->objectNamespaceMap)) {
-			return $this->objectNamespaceMap[$collection];
-		} else {
-			foreach ($this->objectNamespaces as $namespace) {
-				$objectNamespace = $namespace . '\\' . $collection;
-				if (class_exists($objectNamespace)) {
-					$this->objectNamespaceMap[$collection] = $objectNamespace;
-					return $objectNamespace;
-				}
+	function setDefaultNamespace($namespace) {
+		$this->defaultNamespace = $namespace;
+	}
+	
+	function getDefaultNamespace() {
+		if (!$this->defaultNamespace) {
+			$this->defaultNamespace = reset($this->config->get('object_namespaces'));
+		}
+		return $this->defaultNamespace;
+	}
+	
+	function generateAllObjects($targetDirectory) {
+		$hosts = $this->config->get('hosts');
+		foreach ($hosts as $hostname => $host) {
+			foreach ($host as $databaseName => $settings) {
+				$this->adapter->selectDatabase($databaseName, $hostname);
+				$this->generateObjects($targetDirectory);
 			}
-			return false;
 		}
 	}
 	
-	function generateDocuments($targetDirectory, $namespace, $database = null) {
+	function generateObjects($targetDirectory) {
 		$collections = $this->adapter->getCollections();
 		$documentCollections = [];
 		$edgeCollections = [];
 		foreach ($collections as $collectionName => $collectionType) {
 			if ($collectionType == AdapterInterface::COLLECTION_TYPE_DOCUMENT) {
-				$documentCollections[$collectionName] = new DocumentGenerator($collectionName, $namespace);
+				$documentCollections[$collectionName] = new DocumentGenerator($collectionName, $this->getDefaultNamespace());
 				$documents = $this->findAll($collectionName);
 				if ($documents) {
 					foreach ($documents as $document) {
@@ -79,6 +91,21 @@ abstract class ObjectHandler
 		}
 		foreach ($documentCollections as $collectionName => $documentGenerator) {
 			file_put_contents($targetDirectoryPath . $collectionName . '.php', $documentGenerator->getClass());
+		}
+	}
+	
+	protected function getObjectNamespace($collection) {
+		if (array_key_exists($collection, $this->objectNamespaceMap)) {
+			return $this->objectNamespaceMap[$collection];
+		} else {
+			foreach ($this->objectNamespaces as $namespace) {
+				$objectNamespace = $namespace . '\\' . $collection;
+				if (class_exists($objectNamespace)) {
+					$this->objectNamespaceMap[$collection] = $objectNamespace;
+					return $objectNamespace;
+				}
+			}
+			return false;
 		}
 	}
 }

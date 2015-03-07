@@ -4,8 +4,7 @@ namespace ArangoODM;
 
 class Document extends Object
 {
-	protected $properties;
-	protected $collectionName;
+	private $collectionName;
 	
 	function __construct($collectionName, array $properties = []) {
 		$this->collectionName = $collectionName;
@@ -13,33 +12,19 @@ class Document extends Object
 	}
 	
 	function getCollectionName() {
-		return $this->collectionName;
-	}
-	
-	function __set($property, $value) {
-		$this->properties[$property] = $value;
-	}
-	
-	function __get($property) {
-		if (array_key_exists($property, $this->properties)) {
-			return $this->properties[$property];
+		$classname = get_class($this);
+		$classname = substr($classname, strrpos($classname, '\\') + 1);
+		if($classname == 'Document') {
+			return $this->collectionName;
 		} else {
-			return null;
+			return $classname;
 		}
-	}
-	
-	function getId() {
-		return $this->_id;
-	}
-	
-	function getRawProperties() {
-		return $this->properties;
 	}
 	
 	protected function lazyGetNeighbor($edgeCollection, $targetCollection, $filter = []) {
 		$propertyAndFilterKey = $targetCollection . serialize($filter);
 		if (!array_key_exists($propertyAndFilterKey, $this->properties)) {
-			$target = $this->getDocumentHandler()->getNeighbor($this, $edgeCollection, $filter);
+			$target = $this->getObjectHandler()->getNeighbor($this, $edgeCollection, $filter);
 			if ($target) {
 				$this->properties[$propertyAndFilterKey] = $target;
 			} else {
@@ -50,10 +35,10 @@ class Document extends Object
 	}
 	
 	protected function lazyAddNeighbor($document, $edgeCollection, $target) {
-		$this->getDocumentHandler()->addNeighbor($document, $edgeCollection, $target);
+		$this->getObjectHandler()->addNeighbor($document, $edgeCollection, $target);
 	}
 	
 	protected function lazyRemoveNeighbor($document, $edgeCollection, $target) {
-		$this->getDocumentHandler()->removeNeighbor($document, $edgeCollection, $target);
+		$this->getObjectHandler()->removeNeighbor($document, $edgeCollection, $target);
 	}
 }

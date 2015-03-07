@@ -40,7 +40,6 @@ class DocumentGenerator
 		$classGenerator = new ClassGenerator($this->collection, $this->namespace);
 		$classGenerator->addUse('ArangoODM\Document', 'ArangoDoc');
 		$classGenerator->setExtendedClass('ArangoDoc');
-		$classGenerator->addProperty('collectionName', $this->collection, PropertyGenerator::FLAG_PROTECTED);
 		$classGenerator->addMethods($this->getMethods());
 		return '<?php' . "\n\n" . $classGenerator->generate();
 	}

@@ -11,6 +11,7 @@ interface AdapterInterface
 	const COLLECTION_TYPE_EDGE = 3;
 	
 	function __construct(Config $config);
+	function selectDatabase($databaseName, $host = null);
 	function add($document);
 	function update(Document $document);
 	function delete(Document $document);

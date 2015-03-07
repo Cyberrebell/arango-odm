@@ -34,12 +34,21 @@ class CurlAdapter implements AdapterInterface
 		}
 	}
 	
-	function selectDatabase($databaseName) {
-		foreach ($this->hosts as $host => $databases) {
-			foreach ($databases as $db => $settings) {
-				if ($db == $databaseName) {
+	function selectDatabase($databaseName, $host = null) {
+		if ($host) {
+			if (array_key_exists($host, $this->hosts)) {
+				$databases = $this->hosts[$host];
+				if (array_key_exists($databaseName, $databases)) {
 					$this->selectedHost = $host;
-					$this->selectedDatabase = $db;
+					$this->selectedDatabase = $databaseName;
+					return true;
+				}
+			}
+		} else {
+			foreach ($this->hosts as $cfgHost => $databases) {
+				if (array_key_exists($databaseName, $databases)) {
+					$this->selectedHost = $cfgHost;
+					$this->selectedDatabase = $databaseName;
 					return true;
 				}
 			}

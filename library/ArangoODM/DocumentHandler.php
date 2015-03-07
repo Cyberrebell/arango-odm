@@ -117,6 +117,9 @@ class DocumentHandler extends ObjectHandler
 	}
 	
 	protected function mapDocuments(array $documents) {
+		if (empty($documents)) {
+			return $documents;
+		}
 		$docs = [];
 		$firstDocId = reset($documents);
 		$firstDocId = $firstDocId['_id'];
