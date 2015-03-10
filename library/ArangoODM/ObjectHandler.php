@@ -94,6 +94,11 @@ abstract class ObjectHandler
 		}
 	}
 	
+	protected function getCollectionName(array $document) {
+		$objectId = $document['_id'];
+		return substr($objectId, 0, strpos($objectId, '/'));
+	}
+	
 	protected function getObjectNamespace($collection) {
 		if (array_key_exists($collection, $this->objectNamespaceMap)) {
 			return $this->objectNamespaceMap[$collection];

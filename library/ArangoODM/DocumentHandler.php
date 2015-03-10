@@ -57,7 +57,9 @@ class DocumentHandler extends ObjectHandler
 	
 	function findById($id) {
 		$document = $this->adapter->findById($id);
-		$doc = $this->mapDocument($document);
+		$collectionName = $this->getCollectionName($document);
+		$objectNamespace = $this->getObjectNamespace($collectionName);
+		$doc = $this->mapDocument($document, $collectionName, $objectNamespace);
 		if ($doc) {
 			return $doc;
 		} else {
