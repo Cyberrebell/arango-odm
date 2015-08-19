@@ -7,18 +7,18 @@ use ArangoODM\Document;
 
 interface AdapterInterface
 {
-	const COLLECTION_TYPE_DOCUMENT = 2;
-	const COLLECTION_TYPE_EDGE = 3;
-	
-	function __construct(Config $config);
-	function selectDatabase($databaseName, $host = null);
-	function add($document);
-	function update(Document $document);
-	function delete(Document $document);
-	function query($query);
-	function findById($id);
-	function findBy(Document $document, $limit);
-	function findAll($collection, $limit);
-	function getNeighbor(Document $document, $edgeCollection, $filter, $limit);
-	function getCollections();
+    const COLLECTION_TYPE_DOCUMENT = 2;
+    const COLLECTION_TYPE_EDGE = 3;
+    
+    public function __construct(Config $config);
+    public function selectDatabase($databaseName, $host = null);
+    public function add($document);
+    public function update(Document $document);
+    public function delete(Document $document);
+    public function query($query);
+    public function findById($id);
+    public function findBy(Document $document, $limit);
+    public function findAll($collection, $limit);
+    public function getNeighbor(Document $document, $edgeCollection, $filter, $limit);
+    public function getCollections();
 }

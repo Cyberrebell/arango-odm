@@ -15,13 +15,13 @@
         "db",
         "nosql"
     ],
-    "license": "GPL-3.0",
+    "license": "LGPL-3.0",
     "require": {
         "php": ">=5.4.36",
         "ext-curl" : "*"
     },
     "require-dev": {
-    	"zendframework/zend-code": "*"
+        "zendframework/zend-code": "*"
     },
     "autoload": {
         "psr-0": {

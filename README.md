@@ -18,3 +18,4 @@ This library is an PHP ODM for ArangoDB. If offers a lot of helpful tools to wor
 
 # How can i help?
 * You are welcome to test it and give issues to improve it
+* You can create a pull request to contribute
