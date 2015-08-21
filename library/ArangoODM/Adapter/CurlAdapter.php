@@ -16,8 +16,8 @@ class CurlAdapter implements AdapterInterface
     protected $port = '8529';
     protected $protocol = 'http';
     protected $queryResultLimit = 10000000;
-    protected $selectedHost = '127.0.0.1';
-    protected $selectedDatabase = '_system';
+    protected $selectedHost;
+    protected $selectedDatabase;
     
     public function __construct(Config $config)
     {
@@ -33,20 +33,29 @@ class CurlAdapter implements AdapterInterface
         if ($config->get('hosts')) {
             $this->hosts = $config->get('hosts');
         }
+        $this->selectDatabase();
     }
     
-    public function selectDatabase($databaseName, $host = null)
+    public function selectDatabase($databaseName = null, $host = null)
     {
         if ($host) {
             if (array_key_exists($host, $this->hosts)) {
                 $databases = $this->hosts[$host];
-                if (array_key_exists($databaseName, $databases)) {
-                    $this->selectedHost = $host;
-                    $this->selectedDatabase = $databaseName;
-                    return true;
+                if ($databaseName) {
+                    if (array_key_exists($databaseName, $databases)) {
+                        $this->selectedHost = $host;
+                        $this->selectedDatabase = $databaseName;
+                        return true;
+                    }
+                } else {
+                    if (count($databaseName) == 1) {    //use first db if there are no others
+                        $this->selectedHost = $host;
+                        $this->selectedDatabase = key($databases);
+                        return true;
+                    }
                 }
             }
-        } else {
+        } else if ($databaseName) {
             foreach ($this->hosts as $cfgHost => $databases) {
                 if (array_key_exists($databaseName, $databases)) {
                     $this->selectedHost = $cfgHost;
@@ -54,6 +63,9 @@ class CurlAdapter implements AdapterInterface
                     return true;
                 }
             }
+        } else if (count($this->hosts) == 1 && count($databases = reset($this->hosts)) == 1) {
+            $this->selectedHost = key($this->hosts);
+            $this->selectedDatabase = key($databases);
         }
         return false;
     }
