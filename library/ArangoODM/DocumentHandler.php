@@ -53,7 +53,7 @@ class DocumentHandler extends ObjectHandler
     public function query($query)
     {
         $documents = $this->adapter->query($query);
-        if ($documents) {
+        if (is_array($documents)) {
             return $this->mapDocuments($documents);
         } else {
             return false;
@@ -76,15 +76,18 @@ class DocumentHandler extends ObjectHandler
     public function findBy(Object $object, $limit = false)
     {
         $documents = $this->adapter->findBy($object);
-        return $this->mapDocuments($documents);
+        if (is_array($documents)) {
+            return $this->mapDocuments($documents);
+        } else {
+            return false;
+        }
     }
     
     public function findAll($collection, $limit = false)
     {
         $documents = $this->adapter->findAll($collection);
-        $docs = $this->mapDocuments($documents);
-        if ($docs) {
-            return $docs;
+        if (is_array($documents)) {
+            return $this->mapDocuments($documents);
         } else {
             return false;
         }
@@ -102,8 +105,7 @@ class DocumentHandler extends ObjectHandler
     public function getNeighbor(Document $document, $edgeCollection, $filter = [], $limit = false)
     {
         $documents = $this->adapter->getNeighbor($document, $edgeCollection, $filter);
-        $docs = $this->mapDocuments($documents);
-        if ($docs) {
+        if (is_array($documents)) {
             return $this->mapDocuments($documents);
         } else {
             return false;
