@@ -50,10 +50,12 @@ class DocumentHandler extends ObjectHandler
         }
     }
     
-    public function query($query)
+    public function query($query, $mapResult = true)
     {
         $documents = $this->adapter->query($query);
-        if (is_array($documents)) {
+        if (!$mapResult) {
+            return $documents;
+        } else if (is_array($documents)) {
             return $this->mapDocuments($documents);
         } else {
             return false;
