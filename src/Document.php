@@ -1,10 +1,49 @@
 <?php
 
-namespace ArangoODM;
+namespace ArangoOdm;
 
 class Document extends Object
 {
     private $collectionName;
+    protected $properties;
+    protected static $documentManager;
+    
+    public static function setDocumentManager(DocumentManager $dm)
+    {
+        self::$documentManager = $dm;
+    }
+    
+    /**
+     * @return DocumentManager|boolean
+     */
+    public function getDocumentManager()
+    {
+        return self::$documentManager;
+    }
+    
+    public function __set($property, $value)
+    {
+        $this->properties[$property] = $value;
+    }
+    
+    public function __get($property)
+    {
+        if (array_key_exists($property, $this->properties)) {
+            return $this->properties[$property];
+        } else {
+            return null;
+        }
+    }
+    
+    public function getId()
+    {
+        return $this->_id;
+    }
+    
+    public function getRawProperties()
+    {
+        return $this->properties;
+    }
     
     public function __construct($collectionName, array $properties = [])
     {
