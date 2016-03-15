@@ -2,40 +2,40 @@
 
 namespace ArangoOdm;
 
+use ArangoOdm\Adapter\CurlAdapter;
+
 class DocumentManager
 {
+    const ADAPTER_SOCKET = 'sock';
+    const ADAPTER_CURL = 'curl';
+    
     protected $config;
-    /**
-     * @var \ArangoODM\Adapter\AdapterInterface
-     */
     protected $adapter;
     
-    protected $objectNamespaces = [];
-    protected $objectNamespaceMap = [];
-    protected $defaultNamespace;
+    protected $documentNamespaces;
+    protected $documentNamespaceMap;
     
     public function __construct(array $config = [])
     {
         $this->config = new Config($config);
-    
-        $this->setupAdapter($this->config);
-    
-        if (is_array($this->config->get('object_namespaces'))) {
-            $this->objectNamespaces = $this->config->get('object_namespaces');
-        }
+        Document::setDocumentManager($this);    //all Documents will use this DocumentManager now
     }
     
-    public function setDefaultNamespace($namespace)
+    /**
+     * @return \ArangoODM\Adapter\AdapterInterface
+     */
+    protected function getAdapter()
     {
-        $this->defaultNamespace = $namespace;
-    }
-    
-    public function getDefaultNamespace()
-    {
-        if (!$this->defaultNamespace) {
-            $this->defaultNamespace = reset($this->config->get('object_namespaces'));
+        if (!$this->adapter) {
+            switch ($this->config->get('adapter')) {
+                case self::ADAPTER_SOCKET:
+                    $this->adapter = false;
+                    break;
+                default:
+                    $this->adapter = new CurlAdapter($this->config->get('hosts'));
+            }
         }
-        return $this->defaultNamespace;
+        return $this->adapter;
     }
     
     public function generateAllObjects($targetDirectory)
@@ -107,22 +107,6 @@ class DocumentManager
             }
             return false;
         }
-    }
-    
-    const CONNECTOR_SOCKET = 'sock';
-    const CONNECTOR_CURL = 'curl';
-    
-    public function setupAdapter(Config $config)
-    {
-        switch ($config->get('connector')) {
-            case $this::CONNECTOR_SOCKET:
-                $this->adapter = false;
-                break;
-            default:
-                $this->adapter = new CurlAdapter($this->config);
-        }
-        
-        Document::setObjectHandler($this);
     }
     
     public function add($document)

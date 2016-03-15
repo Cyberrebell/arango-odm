@@ -2,7 +2,7 @@
 
 namespace ArangoOdm;
 
-class Document extends Object
+class Document
 {
     private $collectionName;
     protected $properties;

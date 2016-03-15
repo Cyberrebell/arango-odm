@@ -2,72 +2,51 @@
 
 namespace ArangoOdm\Adapter;
 
-use ArangoOdm\Config;
 use ArangoOdm\Document;
 
-class CurlAdapter implements AdapterInterface
+class CurlAdapter extends AbstractAdapter
 {
-    const METHOD_GET = 'GET';
-    const METHOD_POST = 'POST';
-    const METHOD_PUT = 'PUT';
-    const METHOD_DELETE = 'DELETE';
-    
-    protected $hosts = ['127.0.0.1' => ['_system' => ['username' => 'root', 'password' => '']]];    //default arango settings
-    protected $port = '8529';
-    protected $protocol = 'http';
-    protected $queryResultLimit = 10000000;
-    protected $selectedHost;
-    protected $selectedDatabase;
-    
-    public function __construct(Config $config)
+    protected function getBaseUrl()
     {
-        if ($config->get('query_result_limit')) {
-            $this->queryResultLimit = $config->get('query_result_limit');
-        }
-        if ($config->get('port')) {
-            $this->port = $config->get('port');
-        }
-        if ($config->get('protocol')) {
-            $this->protocol = $config->get('protocol');
-        }
-        if ($config->get('hosts')) {
-            $this->hosts = $config->get('hosts');
-        }
-        $this->selectDatabase();
+        return $this->protocol . '://' . $this->selectedHost . '/_db/' . $this->selectedDatabase . '/_api/';
     }
     
-    public function selectDatabase($databaseName = null, $host = null)
+    protected function getLogin()
     {
-        if ($host) {
-            if (array_key_exists($host, $this->hosts)) {
-                $databases = $this->hosts[$host];
-                if ($databaseName) {
-                    if (array_key_exists($databaseName, $databases)) {
-                        $this->selectedHost = $host;
-                        $this->selectedDatabase = $databaseName;
-                        return true;
-                    }
-                } else {
-                    if (count($databaseName) == 1) {    //use first db if there are no others
-                        $this->selectedHost = $host;
-                        $this->selectedDatabase = key($databases);
-                        return true;
-                    }
-                }
-            }
-        } else if ($databaseName) {
-            foreach ($this->hosts as $cfgHost => $databases) {
-                if (array_key_exists($databaseName, $databases)) {
-                    $this->selectedHost = $cfgHost;
-                    $this->selectedDatabase = $databaseName;
-                    return true;
-                }
-            }
-        } else if (count($this->hosts) == 1 && count($databases = reset($this->hosts)) == 1) {
-            $this->selectedHost = key($this->hosts);
-            $this->selectedDatabase = key($databases);
+        if (!$this->login) {
+            $login = $this->hosts[$this->selectedHost][$this->selectedDatabase];
+            $this->login = $login['username'] . ':' . $login['password'];
         }
-        return false;
+        return $this->login;
+    }
+    
+    protected function request($url, $method, $params = null)
+    {
+        $handle = curl_init($url);
+        $options = [
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_USERPWD => $this->getLogin()
+        ];
+        
+        if ($method == self::METHOD_POST || $method == self::METHOD_PUT) {
+            if (is_array($params)) {
+                $jsonParams = json_encode($params, JSON_FORCE_OBJECT);
+            } else {
+                $jsonParams = $params;
+            }
+            $options[CURLOPT_POSTFIELDS] = $jsonParams;
+            $options[CURLOPT_HTTPHEADER] = [
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($jsonParams)
+            ];
+        }
+        
+        curl_setopt_array($handle, $options);
+        $result = curl_exec($handle);
+        curl_close($handle);
+        
+        return json_decode($result, true);
     }
     
     public function add($document)
@@ -156,46 +135,6 @@ class CurlAdapter implements AdapterInterface
             $reformedCollections[$collection['name']] = $collection['type'];
         }
         return $reformedCollections;
-    }
-    
-    protected function request($url, $method, $params = null)
-    {
-        $handle = curl_init($url);
-        $options = [
-            CURLOPT_RETURNTRANSFER => 1,
-            CURLOPT_CUSTOMREQUEST => $method,
-            CURLOPT_USERPWD => $this->getUsernamePasswordStr()
-        ];
-        
-        if ($method == self::METHOD_POST || $method == self::METHOD_PUT) {
-            if (is_array($params)) {
-                $jsonParams = json_encode($params, JSON_FORCE_OBJECT);
-            } else {
-                $jsonParams = $params;
-            }
-            $options[CURLOPT_POSTFIELDS] = $jsonParams;
-            $options[CURLOPT_HTTPHEADER] = [
-                'Content-Type: application/json',
-                'Content-Length: ' . strlen($jsonParams)
-            ];
-        }
-        
-        curl_setopt_array($handle, $options);
-        $result = curl_exec($handle);
-        curl_close($handle);
-        
-        return json_decode($result, true);
-    }
-    
-    protected function getBaseUrl()
-    {
-        return $this->protocol . '://' . $this->selectedHost . ':' . $this->port . '/_db/' . $this->selectedDatabase . '/_api/';
-    }
-    
-    protected function getUsernamePasswordStr()
-    {
-        $login = $this->hosts[$this->selectedHost][$this->selectedDatabase];
-        return $login['username'] . ':' . $login['password'];
     }
     
     protected function filterToAqlFilter(array $filter, $collectionAlias = 'd', $removeStartingAndSymbol = false)
