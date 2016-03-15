@@ -35,10 +35,12 @@ abstract class AbstractAdapter
     {
         if ($ip) {
             $host = $ip;
-            if ($port) {
-                $host .= $port;
+            if (strstr($host, ':')) {
+                //host contains port
+            } elseif ($port) {
+                $host .= ':' . $port;
             } else {
-                $host .= self::DEFAULT_PORT;
+                $host .= ':' . self::DEFAULT_PORT;
             }
             if (!array_key_exists($host, $this->hosts)) {
                 throw new \Exception('The selected database ' . $databaseName . '@' . $ip . ':' . $port . ' is not provided in config!');
@@ -66,9 +68,8 @@ abstract class AbstractAdapter
             $this->selectedDatabase = reset($databaseCfgName);
                 $this->login = null;
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
     
     /**

@@ -38,53 +38,45 @@ class DocumentManager
         return $this->adapter;
     }
     
-    public function generateAllObjects($targetDirectory)
+    public function generateAllDocuments(array $namespaceMap)
     {
         $hosts = $this->config->get('hosts');
-        foreach ($hosts as $hostname => $host) {
-            foreach ($host as $databaseName => $settings) {
-                $this->adapter->selectDatabase($databaseName, $hostname);
-                $this->generateObjects($targetDirectory);
+        foreach ($hosts as $host => $databases) {
+            foreach ($databases as $databaseName => $settings) {
+                $this->getAdapter()->selectDatabase($databaseName, $host);
+                $namespaces = array_keys($settings['documents']);
+                foreach ($namespaces as $namespace) {
+                    if (array_key_exists($namespace, $namespaceMap)) {
+                        $namespaceDirectory = $namespaceMap[$namespace];
+                        if (!is_dir($namespaceDirectory)) {
+                            mkdir($namespaceDirectory);
+                        }
+                        foreach ($settings['documents'][$namespace] as $document) {
+                            $this->generateDocument($document, $namespace, $namespaceDirectory);
+                        }
+                    }
+                }
             }
         }
     }
     
-    public function generateObjects($targetDirectory)
+    public function generateDocument($document, $namespace, $targetDirectory)
     {
-        $collections = $this->adapter->getCollections();
-        $documentCollections = [];
-        $edgeCollections = [];
+        $documentGenerator = new DocumentGenerator($document, $namespace);
+        $result = $this->findBy(new Document($document), 1);
+        $firstDocument = reset($result);
+        foreach ($firstDocument->getRawProperties() as $property => $value) {
+            $documentGenerator->addProperty($property);
+        }
+        
+        $collections = $this->getAdapter()->getCollections();
         foreach ($collections as $collectionName => $collectionType) {
-            if ($collectionType == AdapterInterface::COLLECTION_TYPE_DOCUMENT) {
-                $documentCollections[$collectionName] = new DocumentGenerator($collectionName, $this->getDefaultNamespace());
-                $documents = $this->findAll($collectionName);
-                if ($documents) {
-                    foreach ($documents as $document) {
-                        foreach ($document->getRawProperties() as $property => $value) {
-                            $documentCollections[$collectionName]->addProperty($property);
-                        }
-                    }
-                }
-            } elseif ($collectionType == AdapterInterface::COLLECTION_TYPE_EDGE) {
-                $edgeCollections[] = $collectionName;
+            if ($collectionType == Adapter\AbstractAdapter::COLLECTION_TYPE_EDGE) {
+//                $documentGenerator->addEdgeProperty($collectionName, $collectionB);
             }
         }
-        foreach ($edgeCollections as $collectionName) {
-            $splitted = explode('_', $collectionName);
-            $collectionA = reset($splitted);
-            $collectionB = end($splitted);
-            if (array_key_exists($collectionA, $documentCollections) && array_key_exists($collectionB, $documentCollections)) {
-                $documentCollections[$collectionA]->addEdgeProperty($collectionName, $collectionB);
-                $documentCollections[$collectionB]->addEdgeProperty($collectionName, $collectionA);
-            }
-        }
-        $targetDirectoryPath = $targetDirectory;
-        if (substr($targetDirectoryPath, -1, 1) != DIRECTORY_SEPARATOR) {
-            $targetDirectoryPath .= DIRECTORY_SEPARATOR;
-        }
-        foreach ($documentCollections as $collectionName => $documentGenerator) {
-            file_put_contents($targetDirectoryPath . $collectionName . '.php', $documentGenerator->getClass());
-        }
+        
+        file_put_contents($targetDirectory . DIRECTORY_SEPARATOR . $document . '.php', $documentGenerator->getClass());
     }
     
     protected function getCollectionName(array $document)
@@ -111,17 +103,17 @@ class DocumentManager
     
     public function add($document)
     {
-        $this->adapter->add($document);
+        $this->getAdapter()->add($document);
     }
     
     public function update($document)
     {
         if (is_array($document)) {
             foreach ($document as $singleDocument) {
-                $this->adapter->update($singleDocument);
+                $this->getAdapter()->update($singleDocument);
             }
         } else {
-            return $this->adapter->update($document);
+            return $this->getAdapter()->update($document);
         }
     }
     
@@ -129,16 +121,16 @@ class DocumentManager
     {
         if (is_array($document)) {
             foreach ($document as $singleDocument) {
-                $this->adapter->delete($singleDocument);
+                $this->getAdapter()->delete($singleDocument);
             }
         } else {
-            return $this->adapter->delete($document);
+            return $this->getAdapter()->delete($document);
         }
     }
     
     public function query($query, $mapResult = true)
     {
-        $documents = $this->adapter->query($query);
+        $documents = $this->getAdapter()->query($query);
         if (!$mapResult) {
             return $documents;
         } else if (is_array($documents)) {
@@ -150,7 +142,7 @@ class DocumentManager
     
     public function findById($id)
     {
-        $document = $this->adapter->findById($id);
+        $document = $this->getAdapter()->findById($id);
         $collectionName = $this->getCollectionName($document);
         $objectNamespace = $this->getObjectNamespace($collectionName);
         $doc = $this->mapDocument($document, $collectionName, $objectNamespace);
@@ -161,9 +153,9 @@ class DocumentManager
         }
     }
     
-    public function findBy(Object $object, $limit = false)
+    public function findBy(Document $document, $limit = false)
     {
-        $documents = $this->adapter->findBy($object);
+        $documents = $this->getAdapter()->findBy($document);
         if (is_array($documents)) {
             return $this->mapDocuments($documents);
         } else {
@@ -173,7 +165,7 @@ class DocumentManager
     
     public function findAll($collection, $limit = false)
     {
-        $documents = $this->adapter->findAll($collection);
+        $documents = $this->getAdapter()->findAll($collection);
         if (is_array($documents)) {
             return $this->mapDocuments($documents);
         } else {
@@ -192,7 +184,7 @@ class DocumentManager
     
     public function getNeighbor(Document $document, $edgeCollection, $filter = [], $limit = false)
     {
-        $documents = $this->adapter->getNeighbor($document, $edgeCollection, $filter);
+        $documents = $this->getAdapter()->getNeighbor($document, $edgeCollection, $filter);
         if (is_array($documents)) {
             return $this->mapDocuments($documents);
         } else {
