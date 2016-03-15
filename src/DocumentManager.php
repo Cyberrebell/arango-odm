@@ -21,23 +21,6 @@ class DocumentManager
         Document::setDocumentManager($this);    //all Documents will use this DocumentManager now
     }
     
-    /**
-     * @return \ArangoODM\Adapter\AdapterInterface
-     */
-    protected function getAdapter()
-    {
-        if (!$this->adapter) {
-            switch ($this->config->get('adapter')) {
-                case self::ADAPTER_SOCKET:
-                    $this->adapter = false;
-                    break;
-                default:
-                    $this->adapter = new CurlAdapter($this->config->get('hosts'));
-            }
-        }
-        return $this->adapter;
-    }
-    
     public function generateAllDocuments(array $namespaceMap)
     {
         $hosts = $this->config->get('hosts');
@@ -63,7 +46,7 @@ class DocumentManager
     public function generateDocument($document, $namespace, $targetDirectory)
     {
         $documentGenerator = new DocumentGenerator($document, $namespace);
-        $result = $this->findBy(new Document($document), 1);
+        $result = $this->findAll($document, 1);
         $firstDocument = reset($result);
         foreach ($firstDocument->getRawProperties() as $property => $value) {
             $documentGenerator->addProperty($property);
@@ -72,33 +55,28 @@ class DocumentManager
         $collections = $this->getAdapter()->getCollections();
         foreach ($collections as $collectionName => $collectionType) {
             if ($collectionType == Adapter\AbstractAdapter::COLLECTION_TYPE_EDGE) {
-//                $documentGenerator->addEdgeProperty($collectionName, $collectionB);
+                $result = $this->findAll($collectionName, 1);
+                if (!empty($result)) {
+                    $firstDocument = reset($result);
+                    $collectionB = false;
+                    if ($firstDocument) {
+                        $from = $this->getCollectionName($firstDocument['_from']);
+                        $to = $this->getCollectionName($firstDocument['_to']);
+                        if ($from == $document) {
+                            $collectionB = $to;
+                        } elseif ($to == $document) {
+                            $collectionB = $from;
+                        }
+                        
+                        if ($collectionB) {
+                            $documentGenerator->addEdgeProperty($collectionName, $collectionB);
+                        }
+                    }
+                }
             }
         }
         
         file_put_contents($targetDirectory . DIRECTORY_SEPARATOR . $document . '.php', $documentGenerator->getClass());
-    }
-    
-    protected function getCollectionName(array $document)
-    {
-        $objectId = $document['_id'];
-        return substr($objectId, 0, strpos($objectId, '/'));
-    }
-    
-    protected function getObjectNamespace($collection)
-    {
-        if (array_key_exists($collection, $this->objectNamespaceMap)) {
-            return $this->objectNamespaceMap[$collection];
-        } else {
-            foreach ($this->objectNamespaces as $namespace) {
-                $objectNamespace = $namespace . '\\' . $collection;
-                if (class_exists($objectNamespace)) {
-                    $this->objectNamespaceMap[$collection] = $objectNamespace;
-                    return $objectNamespace;
-                }
-            }
-            return false;
-        }
     }
     
     public function add($document)
@@ -213,22 +191,68 @@ class DocumentManager
         //todo
     }
     
+    /**
+     * @return \ArangoODM\Adapter\AbstractAdapter
+     */
+    protected function getAdapter()
+    {
+        if (!$this->adapter) {
+            switch ($this->config->get('adapter')) {
+                case self::ADAPTER_SOCKET:
+                    $this->adapter = false;
+                    break;
+                default:
+                    $this->adapter = new CurlAdapter($this->config->get('hosts'));
+            }
+        }
+        return $this->adapter;
+    }
+    
+    protected function getCollectionName($document)
+    {
+        if (is_array($document)) {
+            $documentId = $document['_id'];
+        } else {
+            $documentId = $document;
+        }
+        return substr($documentId, 0, strpos($documentId, '/'));
+    }
+    
+    protected function getDocumentNamespace($collection)
+    {
+        $configCollections = $this->getAdapter()->getConfigCollections();
+        foreach ($configCollections as $namespace => $collections) {
+            if (in_array($collection, $collections, true)) {
+                $documentNamespace = $namespace . '\\' . $collection;
+                if (class_exists($documentNamespace)) {
+                    return $documentNamespace;
+                }
+            }
+        }
+        return false;
+    }
+    
     protected function mapDocuments(array $documents)
     {
+        $docs = [];
         if (empty($documents)) {
+            return $docs;
+        }
+        
+        $firstDoc = reset($documents);
+        if (array_key_exists('_from', $firstDoc) && array_key_exists('_to', $firstDoc)) {   //return edges as array
             return $documents;
         }
-        $docs = [];
-        $firstDocId = reset($documents);
-        $firstDocId = $firstDocId['_id'];
-        $collectionName = substr($firstDocId, 0, strpos($firstDocId, '/'));
-        $collectionNamespace = $this->getObjectNamespace($collectionName);
+        
+        $collectionName = $this->getCollectionName($firstDoc);
+        $collectionNamespace = $this->getDocumentNamespace($collectionName);
         foreach ($documents as $document) {
             $doc = $this->mapDocument($document, $collectionName, $collectionNamespace);
             if ($doc) {
                 $docs[$document['_id']] = $doc;
             } else {
-                return false;   //break mapping if one document is invalid
+                //break mapping if one document is invalid
+                throw new Exception\InconsistentDatabaseException('Detected inconsistent data in collection "' . $collectionName . '" in document with id: ' . $document['_id']);
             }
         }
         return $docs;
@@ -267,9 +291,7 @@ class DocumentManager
             }
         }
         
-        foreach ($documentsToAdd as $doc) {     //todo bulk
-            $this->add($doc);
-        }
+        $this->add($documentsToAdd);
     }
     
     protected function ensureEdge($source, $edgeCollection, $target)

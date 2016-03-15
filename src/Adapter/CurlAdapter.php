@@ -81,13 +81,13 @@ class CurlAdapter extends AbstractAdapter
     
     public function query($query)
     {
-        $result = $this->request($this->getBaseUrl() . 'cursor', self::METHOD_POST, ['query' => $query,'options' => ['batchSize' => $this->queryResultLimit]]);
+        $result = $this->request($this->getBaseUrl() . 'cursor', self::METHOD_POST, ['query' => $query, 'options' => ['batchSize' => self::RESULT_LIMIT]]);
         if (!is_array($result)) {
-            throw new \Exception('Request failed!');
+            throw new \ArangoOdm\Exception\ResultException('Request failed!');
         } elseif (array_key_exists('result', $result)) {
             return $result['result'];
         } else {
-            throw new \Exception($result['errorMessage']);
+            throw new \ArangoOdm\Exception\ResultException($result['errorMessage']);
         }
     }
     
@@ -99,7 +99,11 @@ class CurlAdapter extends AbstractAdapter
     public function findBy(Document $document, $limit = false)
     {
         $result = $this->request($this->getBaseUrl() . 'simple/by-example', self::METHOD_PUT, ['collection' => $document->getCollectionName(), 'example' => $document->getRawProperties()]);
-        return $result['result'];
+        if (array_key_exists('result', $result)) {
+            return $result['result'];
+        } else {
+            throw new \ArangoOdm\Exception\ResultException($result['errorMessage']);
+        }
     }
     
     public function findAll($collection, $limit = false)
@@ -107,7 +111,7 @@ class CurlAdapter extends AbstractAdapter
         if ($limit) {
             $resultLimit = $limit;
         } else {
-            $resultLimit = $this->queryResultLimit;
+            $resultLimit = self::RESULT_LIMIT;
         }
         return $this->query('FOR d IN ' . $collection . ' LIMIT ' . $resultLimit . ' RETURN d');
     }

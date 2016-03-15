@@ -13,6 +13,7 @@ abstract class AbstractAdapter
     const METHOD_POST = 'POST';
     const METHOD_PUT = 'PUT';
     const METHOD_DELETE = 'DELETE';
+    const RESULT_LIMIT = 10000000;
     
     protected $hosts = ['127.0.0.1:8529' => ['_system' => ['username' => 'root', 'password' => '', 'documents' => []]]];    //default arango settings
     protected $protocol = 'http';
@@ -20,17 +21,14 @@ abstract class AbstractAdapter
     protected $selectedDatabase;
     protected $login;
 
-    public function __construct(array $config)
+    public function __construct(array $config = [])
     {
-        if (array_key_exists('protocol', $config)) {
-            $this->protocol = $config['protocol'];
-        }
-        if (array_key_exists('hosts', $config)) {
-            $this->hosts = $config['hosts'];
+        if (!empty($config)) {
+            $this->hosts = $config;
         }
         $this->selectDatabase();
     }
-    
+
     public function selectDatabase($databaseName = null, $ip = null, $port = null)
     {
         if ($ip) {
@@ -66,10 +64,20 @@ abstract class AbstractAdapter
             $this->selectedHost = $host;
             $databaseCfgName = array_keys($databases);
             $this->selectedDatabase = reset($databaseCfgName);
-                $this->login = null;
+            $this->login = null;
             return true;
         }
         return false;
+    }
+    
+    public function getConfigCollections()
+    {
+        $dbConfig = $this->hosts[$this->selectedHost][$this->selectedDatabase];
+        if (array_key_exists('documents', $dbConfig)) {
+            return $dbConfig['documents'];
+        } else {
+            return false;
+        }
     }
     
     /**
