@@ -9,7 +9,7 @@ This library is an PHP ODM for ArangoDB. If offers a lot of helpful tools to wor
 - [x] use ArangoDB edge-collections to connect your documents
 - [x] use Document-Getters to access connected Documents
 - [x] use Document-Setters to change connections
-- [x] create your collections using ArangoDB webinterface, let the ODM lib create matching Document-Classes to work with
+- [x] create your collections using ArangoDB webinterface, let the ODM create matching Document-Classes to work with
 - [x] get Document-Objects of the matching custom class back as db-results
 - [ ] optimized internal performance with help of performance benchmarks
 - [ ] improved documentation

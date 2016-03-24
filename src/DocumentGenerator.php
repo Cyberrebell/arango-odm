@@ -64,23 +64,23 @@ class DocumentGenerator
         }
         
         foreach ($this->edgeProperties as $edgeCollection => $targetCollection) {
-            $setterParam = new ParameterGenerator(strtolower($targetCollection));
-            $methodGenerator = new MethodGenerator('add' . $targetCollection, [$setterParam]);
+            $setterParam = new ParameterGenerator(lcfirst($edgeCollection));
+            $methodGenerator = new MethodGenerator('add' . $edgeCollection, [$setterParam]);
             $methodGenerator->setBody('$this->lazyAddNeighbor($this, \'' . $edgeCollection . '\', ' . $setterParam->generate() . ');');
             $methods[] = $methodGenerator;
             
-            $setterParam = new ParameterGenerator(strtolower($targetCollection));
-            $methodGenerator = new MethodGenerator('remove' . $targetCollection, [$setterParam]);
+            $setterParam = new ParameterGenerator(lcfirst($edgeCollection));
+            $methodGenerator = new MethodGenerator('remove' . $edgeCollection, [$setterParam]);
             $methodGenerator->setBody('$this->lazyRemoveNeighbor($this, \'' . $edgeCollection . '\', ' . $setterParam->generate() . ');');
             $methods[] = $methodGenerator;
             
-            $setterParam = new ParameterGenerator(strtolower($targetCollection));
-            $methodGenerator = new MethodGenerator('set' . $targetCollection, [$setterParam]);
+            $setterParam = new ParameterGenerator(lcfirst($edgeCollection));
+            $methodGenerator = new MethodGenerator('set' . $edgeCollection, [$setterParam]);
             $methods[] = $methodGenerator;
             
             $defaultValue = new ValueGenerator([], ValueGenerator::TYPE_ARRAY);
             $setterParam = new ParameterGenerator('filter', null, $defaultValue);
-            $methodGenerator = new MethodGenerator('get' . $targetCollection, [$setterParam]);
+            $methodGenerator = new MethodGenerator('get' . $edgeCollection, [$setterParam]);
             $methodGenerator->setBody('return $this->lazyGetNeighbor(\'' . $edgeCollection . '\', \'' . $targetCollection . '\', $filter);');
             $methods[] = $methodGenerator;
         }
