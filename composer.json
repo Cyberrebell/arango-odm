@@ -10,7 +10,7 @@
     ],
     "license": "LGPL-3.0",
     "require": {
-        "php": ">=5.6.17",
+        "php": ">=5.6.0",
         "ext-curl": "*"
     },
     "require-dev": {
