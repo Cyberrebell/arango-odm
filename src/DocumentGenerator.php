@@ -55,7 +55,7 @@ class DocumentGenerator
         foreach ($this->properties as $propertyName) {
             $setterParam = new ParameterGenerator($propertyName);
             $methodGenerator = new MethodGenerator('set' . ucfirst($propertyName), [$setterParam]);
-            $methodGenerator->setBody('$this->' . $propertyName . ' = ' . $setterParam->generate() . ';');
+            $methodGenerator->setBody('$this->' . $propertyName . ' = ' . $setterParam->generate() . ';' . PHP_EOL . PHP_EOL . 'return $this;');
             $methods[] = $methodGenerator;
             
             $methodGenerator = new MethodGenerator('get' . ucfirst($propertyName));
