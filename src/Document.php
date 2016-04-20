@@ -66,7 +66,7 @@ class Document
     {
         $propertyAndFilterKey = $targetCollection . serialize($filter);
         if (!array_key_exists($propertyAndFilterKey, $this->properties)) {
-            $target = $this->getObjectHandler()->getNeighbor($this, $edgeCollection, $filter);
+            $target = $this->getDocumentManager()->getNeighbor($this, $edgeCollection, $filter);
             if ($target) {
                 $this->properties[$propertyAndFilterKey] = $target;
             } else {
@@ -78,11 +78,11 @@ class Document
     
     protected function lazyAddNeighbor($document, $edgeCollection, $target)
     {
-        $this->getObjectHandler()->addNeighbor($document, $edgeCollection, $target);
+        $this->getDocumentManager()->addNeighbor($document, $edgeCollection, $target);
     }
     
     protected function lazyRemoveNeighbor($document, $edgeCollection, $target)
     {
-        $this->getObjectHandler()->removeNeighbor($document, $edgeCollection, $target);
+        $this->getDocumentManager()->removeNeighbor($document, $edgeCollection, $target);
     }
 }
