@@ -83,7 +83,7 @@ abstract class AbstractAdapter
     /**
      * @param Document|array $document Could be an array for bulk insert
      */
-    public abstract function add($document);
+    public abstract function add($document, $allowBulk);
     public abstract function update(Document $document);
     public abstract function delete(Document $document);
     public abstract function query($query);

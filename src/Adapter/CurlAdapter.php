@@ -49,7 +49,7 @@ class CurlAdapter extends AbstractAdapter
         return json_decode($result, true);
     }
     
-    public function add($document)
+    public function add($document, $allowBulk)
     {
         if ($document instanceof Document) {
             $result = $this->request($this->getBaseUrl() . 'document?collection=' . $document->getCollectionName(), self::METHOD_POST, $document->getRawProperties());
@@ -60,12 +60,18 @@ class CurlAdapter extends AbstractAdapter
             }
             return $result;
         } else {
-            $bulkJson = '';
-            foreach ($document as $singleDocument) {
-                $bulkJson .= json_encode($singleDocument->getRawProperties(), JSON_FORCE_OBJECT) . "\n";
+            if ($allowBulk) {
+                $bulkJson = '';
+                foreach ($document as $singleDocument) {
+                    $bulkJson .= json_encode($singleDocument->getRawProperties(), JSON_FORCE_OBJECT) . "\n";
+                }
+                $collectionName = reset($document)->getCollectionName();
+                return $this->request($this->getBaseUrl() . 'import?type=documents&collection=' . $collectionName, self::METHOD_POST, $bulkJson);
+            } else {
+                foreach ($document as $doc) {
+                    $this->add($doc, false);
+                }
             }
-            $collectionName = reset($document)->getCollectionName();
-            return $this->request($this->getBaseUrl() . 'import?type=documents&collection=' . $collectionName, self::METHOD_POST, $bulkJson);
         }
     }
     

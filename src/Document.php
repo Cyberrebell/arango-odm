@@ -18,6 +18,9 @@ class Document
      */
     public function getDocumentManager()
     {
+        if (!self::$documentManager instanceof DocumentManager) {
+            throw new Exception\WrongUsageException('The DocumentManager was never initialized!');
+        }
         return self::$documentManager;
     }
     

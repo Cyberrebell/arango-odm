@@ -79,9 +79,9 @@ class DocumentManager
         file_put_contents($targetDirectory . DIRECTORY_SEPARATOR . $document . '.php', $documentGenerator->getClass());
     }
     
-    public function add($document)
+    public function add($document, $allowBulk = false)
     {
-        $this->getAdapter()->add($document);
+        $this->getAdapter()->add($document, $allowBulk);
     }
     
     public function update($document)
@@ -174,7 +174,7 @@ class DocumentManager
     {
         $source = $this->ensureArray($document);
         $destination = $this->ensureArray($target);
-                
+        
         $this->ensureEdge($source, $edgeCollection, $destination);
     }
     
@@ -290,8 +290,9 @@ class DocumentManager
                 $documentsToAdd[] = $singleDoc;
             }
         }
-        
-        $this->add($documentsToAdd);
+        if (!empty($documentsToAdd)) {
+            $this->add($documentsToAdd);
+        }
     }
     
     protected function ensureEdge($source, $edgeCollection, $target)
