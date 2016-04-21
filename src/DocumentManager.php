@@ -188,7 +188,21 @@ class DocumentManager
     
     public function setNeighbor($document, $edgeCollection, $target)
     {
-        //todo
+        //todo: do it with one query
+        $neighbors = $this->getNeighbor($document, $edgeCollection);
+        $targets = $this->ensureArray($target);
+        foreach ($neighbors as $key => $neighbor) {
+            foreach ($targets as $oneTarget) {
+                if ($neighbor->getId() == $oneTarget->getId()) {
+                    unset($neighbors[$key]);
+                    break;
+                }
+            }
+        }
+        if (!empty($neighbors)) {
+            $this->removeNeighbor($document, $edgeCollection, $neighbors);
+        }
+        $this->addNeighbor($document, $edgeCollection, $targets);
     }
     
     /**

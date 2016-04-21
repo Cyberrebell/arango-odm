@@ -88,4 +88,9 @@ class Document
     {
         $this->getDocumentManager()->removeNeighbor($document, $edgeCollection, $target);
     }
+    
+    protected function lazySetNeighbor($document, $edgeCollection, $target)
+    {
+        $this->getDocumentManager()->setNeighbor($document, $edgeCollection, $target);
+    }
 }

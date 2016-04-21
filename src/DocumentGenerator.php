@@ -76,6 +76,7 @@ class DocumentGenerator
             
             $setterParam = new ParameterGenerator(lcfirst($edgeCollection));
             $methodGenerator = new MethodGenerator('set' . $edgeCollection, [$setterParam]);
+            $methodGenerator->setBody('$this->lazySetNeighbor($this, \'' . $edgeCollection . '\', ' . $setterParam->generate() . ');');
             $methods[] = $methodGenerator;
             
             $defaultValue = new ValueGenerator([], ValueGenerator::TYPE_ARRAY);

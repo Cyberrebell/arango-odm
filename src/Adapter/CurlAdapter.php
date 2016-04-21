@@ -127,7 +127,7 @@ class CurlAdapter extends AbstractAdapter
         if ($limit) {
             $resultLimit = $limit;
         } else {
-            $resultLimit = $this->queryResultLimit;
+            $resultLimit = self::RESULT_LIMIT;
         }
         $query = 'FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") ';
         if (!empty($filter)) {
