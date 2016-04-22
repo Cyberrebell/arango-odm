@@ -129,11 +129,11 @@ class CurlAdapter extends AbstractAdapter
         } else {
             $resultLimit = self::RESULT_LIMIT;
         }
-        $query = 'FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any") ';
+        $query = 'FOR d in ' . $document->getCollectionName() . ' FILTER d._id=="' . $document->getId() . '" FOR n IN NEIGHBORS(' . $document->getCollectionName() . ', ' . $edgeCollection . ', d, "any", [], {includeData: true}) ';
         if (!empty($filter)) {
-            $query .= 'FILTER ' . $this->filterToAqlFilter($filter, 'n.vertex', true) . ' ';
+            $query .= 'FILTER ' . $this->filterToAqlFilter($filter, 'n', true) . ' ';
         }
-        $query .= 'LIMIT ' . $resultLimit . ' RETURN n.vertex';
+        $query .= 'LIMIT ' . $resultLimit . ' RETURN n';
         return $this->query($query);
     }
     
